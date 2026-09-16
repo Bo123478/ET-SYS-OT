@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Workbench.Service</RootNamespace>
+    <AssemblyName>Workbench.Service</AssemblyName>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- 第一版骨架使用纯 BCL。
+         后续接入真实服务宿主时再添加：
+         - Microsoft.Extensions.Hosting.WindowsServices -->
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Workbench.Domain\Workbench.Domain.csproj" />
+    <ProjectReference Include="..\Workbench.Application\Workbench.Application.csproj" />
+    <ProjectReference Include="..\Workbench.Contracts\Workbench.Contracts.csproj" />
+    <ProjectReference Include="..\Workbench.Infrastructure\Workbench.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,78 @@
+## .NET 构建产物
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+[Ll]og/
+[Ll]ogs/
+*.log
+*.tlog
+*.binlog
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+_ReSharper*/
+*.DotSettings.user
+.idea/
+
+## 测试与覆盖率
+[Tt]est[Rr]esult*/
+TestResults/
+*.trx
+*.coverage
+*.coverlet.json
+coverage*.json
+coverage*.xml
+[Cc]overage/
+
+## NuGet
+*.nupkg
+*.snupkg
+packages/
+!packages/build/
+.nuget/
+
+## 安装器产物
+installer/output/
+installer/*.msi
+installer/*.exe
+installer/*.cab
+installer/**/obj/
+installer/**/bin/
+
+## Windows / 桌面
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+## OneDrive / 临时文件
+*.tmp
+~$*
+*.~*
+*.bak
+*.orig
+*.rej
+
+## SQLite 本地库（运行时生成）
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+
+## 敏感信息
+*.pfx
+*.snk
+appsettings.Local.json
+*.secrets.json

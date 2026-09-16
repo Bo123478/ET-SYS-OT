@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Workbench.Application</RootNamespace>
+    <AssemblyName>Workbench.Application</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Workbench.Domain\Workbench.Domain.csproj" />
+    <ProjectReference Include="..\Workbench.Contracts\Workbench.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
