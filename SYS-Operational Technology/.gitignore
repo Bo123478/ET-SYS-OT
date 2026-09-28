@@ -1,0 +1,59 @@
+# ---------------------------------------------------------------------------
+# 现场设备与系统运维数字化平台 — Git 忽略规则
+# ---------------------------------------------------------------------------
+
+# --- Power Platform / .cdsproj 构建产物 ---
+bin/
+obj/
+*.cdsproj.user
+*.user
+*.suo
+
+# --- 解决方案导出与打包临时文件 ---
+*.zip
+*.cab
+_solution/
+_export/
+_managed/
+exported/
+
+# --- PAC CLI 本地状态与认证缓存 ---
+.pac/
+authprofiles*.json
+
+# --- 环境相关配置（禁止入库，按环境注入）---
+# DeploymentSettings 下除模板外的一切本地值
+**/DeploymentSettings/*.local.json
+**/DeploymentSettings/*.secrets.json
+**/deployment-settings.local.json
+secrets*.json
+.env
+.env.*
+
+# --- Node（Canvas App 源码化、工具脚本）---
+node_modules/
+npm-debug.log*
+yarn-error.log*
+.pnpm-store/
+
+# --- .NET ---
+.vs/
+*.nupkg
+project.lock.json
+
+# --- VS Code（保留团队共享配置，忽略个人配置）---
+.vscode/*.local.json
+.vscode/settings.json
+
+# --- 测试与冒烟输出 ---
+test-results/
+TestResults/
+*.trx
+smoke-output/
+logs/
+
+# --- 操作系统 ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

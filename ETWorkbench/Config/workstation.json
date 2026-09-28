@@ -1,0 +1,74 @@
+﻿{
+  "$schema": "./workstation.schema.json",
+  "_comment": "本机配置。含中文，必须保存为 UTF-8 with BOM（约束 C-1）。修改后需重启工作台。",
+
+  "SchemaVersion": "1.0.0",
+
+  "Identity": {
+    "_comment": "设备识别覆盖值。留空则按识别链自动推导（方案 §4.3）。",
+    "EquipmentIdOverride": "",
+    "SiteName": "",
+    "AllowedIpPrefixes": [],
+    "BusinessAdapterPatterns": [],
+    "_comment2": "AllowedIpPrefixes 例：[\"10.20.\", \"10.21.\"]；BusinessAdapterPatterns 例：[\"以太网\", \"Ethernet\"]"
+  },
+
+  "Share": {
+    "_comment": "公司受控 SMB 共享根（P-1 / U-1）。ET 对 MasterData/Release/ConfigRules 只读。",
+    "ShareRoot": "",
+    "MasterDataRelative": "MasterData",
+    "ReleaseRelative": "Release",
+    "ConfigRulesRelative": "ConfigRules",
+    "UploadRelative": "Upload",
+    "ConnectTimeoutMs": 10000,
+    "ReadTimeoutMs": 30000
+  },
+
+  "Local": {
+    "_comment": "本地路径。DataRoot 默认 C:\\ProgramData\\ETWorkbench（IT-12）。",
+    "DataRoot": "C:\\ProgramData\\ETWorkbench",
+    "SoftwareRoot": "",
+    "_comment2": "SoftwareRoot 为下载软件的落地根（P-8 / U-5），例：D:\\ETSoftware。留空则首次启动时询问。",
+    "MaxConcurrentDownloads": 1,
+    "TempRetentionHours": 24
+  },
+
+  "Transfer": {
+    "_comment": "下载与校验策略（E-04）。软件包为文件夹递归复制，非 ZIP。",
+    "VerifySha256": true,
+    "VerifyFileCount": true,
+    "PreservePartialOnFailure": true,
+    "MinFreeSpaceBytes": 5368709120,
+    "_comment2": "MinFreeSpaceBytes 默认 5 GB。低于此值时暂停新下载（约束 C-8），不删业务文件。",
+    "UseUncertainProgressBar": false,
+    "_comment3": "UseUncertainProgressBar 为 true 时只显示不确定进度（方案 §8.4 可砍项 5）。"
+  },
+
+  "Health": {
+    "_comment": "健康检测与上报（E-05）。阈值详见 health-rules.json。",
+    "Enabled": true,
+    "CollectIntervalMinutes": 15,
+    "OutboxPublishIntervalMinutes": 10,
+    "UnreachableIsUnknown": true,
+    "_comment2": "UnreachableIsUnknown 为 true 时，无权限或取数失败记为 Unknown，不直接判定故障（方案 §6.5）。"
+  },
+
+  "Update": {
+    "_comment": "工作台自更新（E-06）。多版本目录 + Current.json + 冒烟测试回滚。",
+    "AutoCheckOnStartup": true,
+    "EnableGuiCheckButton": true,
+    "_comment2": "EnableGuiCheckButton 为 false 时可砍掉 GUI 内的检查更新按钮（方案 §8.4 可砍项 3）。",
+    "SmokeTestOnSwitch": true,
+    "KeepVersions": 2
+  },
+
+  "Ui": {
+    "_comment": "界面选项（E-07）。",
+    "EnableOpenFolderButton": true,
+    "_comment2": "EnableOpenFolderButton 为 false 时可砍掉「打开目录」入口（方案 §8.4 可砍项 2）。",
+    "EnableMasterDataImportCsv": true,
+    "_comment3": "EnableMasterDataImportCsv 为 false 时可砍掉 CSV 导入（方案 §8.4 可砍项 1）。",
+    "LogLevel": "Info",
+    "LogRetentionDays": 30
+  }
+}

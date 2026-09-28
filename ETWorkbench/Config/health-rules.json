@@ -1,0 +1,175 @@
+﻿{
+  "$schema": "./health-rules.schema.json",
+  "_comment": "健康检测规则。改本文件即可调阈值，不改代码（方案 §7 E-05 步骤 2）。含中文，必须 UTF-8 with BOM（约束 C-1）。",
+  "_comment2": "告警模型：Collect -> Evaluate -> Duration -> Debounce -> Deduplicate -> Alarm -> Recovery（方案 §6.5）。",
+
+  "SchemaVersion": "1.0.0",
+
+  "Global": {
+    "_comment": "全局节流参数。",
+    "CooldownMinutes": 30,
+    "_comment2": "同一规则触发告警后的冷却时间，冷却期内不重复告警。",
+    "MaxAlarmsPerDay": 50,
+    "UnknownIsNotFault": true,
+    "_comment3": "UnknownIsNotFault 为 true 时不把取数失败判定为故障（方案 §6.5）。",
+    "Enabled": true
+  },
+
+  "Rules": [
+    {
+      "RuleId": "HR-CPU",
+      "Name": "CPU 持续高占用",
+      "Source": "Cim",
+      "Metric": "CpuLoadPercent",
+      "Comparator": "GreaterThanOrEqual",
+      "Threshold": 85,
+      "DurationMinutes": 10,
+      "DebounceSamples": 3,
+      "RecoveryThreshold": 70,
+      "RecoveryDurationMinutes": 10,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": "采样间隔由 workstation.json 的 Health.CollectIntervalMinutes 决定。"
+    },
+    {
+      "RuleId": "HR-MEM",
+      "Name": "可用内存不足",
+      "Source": "Cim",
+      "Metric": "AvailableMemoryPercent",
+      "Comparator": "LessThanOrEqual",
+      "Threshold": 10,
+      "DurationMinutes": 10,
+      "DebounceSamples": 3,
+      "RecoveryThreshold": 20,
+      "RecoveryDurationMinutes": 5,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": ""
+    },
+    {
+      "RuleId": "HR-DISK-BIZ",
+      "Name": "业务盘空间不足",
+      "Source": "PsDrive",
+      "Metric": "FreeSpacePercent",
+      "Target": "{BusinessDrive}",
+      "Comparator": "LessThanOrEqual",
+      "Threshold": 10,
+      "DurationMinutes": 5,
+      "DebounceSamples": 2,
+      "RecoveryThreshold": 15,
+      "RecoveryDurationMinutes": 5,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": "{BusinessDrive} 由识别链的软件根/业务路径推导。"
+    },
+    {
+      "RuleId": "HR-DISK-SOFT",
+      "Name": "软件根空间不足",
+      "Source": "PsDrive",
+      "Metric": "FreeSpaceBytes",
+      "Target": "{SoftwareRoot}",
+      "Comparator": "LessThan",
+      "Threshold": 5368709120,
+      "DurationMinutes": 5,
+      "DebounceSamples": 2,
+      "RecoveryThreshold": 10737418240,
+      "RecoveryDurationMinutes": 5,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": "默认 5 GB（约束 C-8：空间不足暂停下载，不删业务文件）。"
+    },
+    {
+      "RuleId": "HR-SHARE",
+      "Name": "共享连通性丢失",
+      "Source": "ShareReachability",
+      "Metric": "IsReachable",
+      "Comparator": "Equals",
+      "Threshold": false,
+      "DurationMinutes": 10,
+      "DebounceSamples": 3,
+      "RecoveryThreshold": true,
+      "RecoveryDurationMinutes": 1,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": "断共享期间事件落本地 Outbox，恢复后自动补传（方案 §6.6）。"
+    },
+    {
+      "RuleId": "HR-SVC-CORE",
+      "Name": "关键服务未运行",
+      "Source": "Service",
+      "Metric": "Status",
+      "Target": "{ServiceNames}",
+      "Comparator": "NotEquals",
+      "Threshold": "Running",
+      "DurationMinutes": 5,
+      "DebounceSamples": 2,
+      "RecoveryThreshold": "Running",
+      "RecoveryDurationMinutes": 2,
+      "Severity": "Warning",
+      "Enabled": false,
+      "Note": "默认关闭。需运维填入实际服务名后启用（{ServiceNames}）。"
+    },
+    {
+      "RuleId": "HR-PROC-CORE",
+      "Name": "业务进程未运行",
+      "Source": "Process",
+      "Metric": "IsRunning",
+      "Target": "{ProcessNames}",
+      "Comparator": "Equals",
+      "Threshold": false,
+      "DurationMinutes": 15,
+      "DebounceSamples": 3,
+      "RecoveryThreshold": true,
+      "RecoveryDurationMinutes": 2,
+      "Severity": "Warning",
+      "Enabled": false,
+      "Note": "默认关闭。为避免误判，需运维确认必须常驻的进程名后启用（{ProcessNames}）。"
+    },
+    {
+      "RuleId": "HR-EVT-ERROR",
+      "Name": "事件日志出现严重错误",
+      "Source": "EventLog",
+      "Metric": "ErrorCount",
+      "Target": "System,Application",
+      "Comparator": "GreaterThan",
+      "Threshold": 5,
+      "DurationMinutes": 15,
+      "DebounceSamples": 1,
+      "RecoveryThreshold": 0,
+      "RecoveryDurationMinutes": 15,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": "无读取权限时记为 Unknown，不判定故障。可在方案 §8.4 可砍项 4 中砍掉。"
+    },
+    {
+      "RuleId": "HR-SELF-OUTBOX",
+      "Name": "本地 Outbox 积压过多",
+      "Source": "Self",
+      "Metric": "OutboxPendingCount",
+      "Comparator": "GreaterThanOrEqual",
+      "Threshold": 200,
+      "DurationMinutes": 30,
+      "DebounceSamples": 2,
+      "RecoveryThreshold": 20,
+      "RecoveryDurationMinutes": 30,
+      "Severity": "Warning",
+      "Enabled": true,
+      "Note": "自身状态检测：说明长期无法补传，需人工介入。"
+    }
+  ],
+
+  "SeverityMap": {
+    "Info": "信息",
+    "Warning": "警告",
+    "Critical": "严重"
+  },
+
+  "ComparatorMap": {
+    "GreaterThan": ">",
+    "GreaterThanOrEqual": ">=",
+    "LessThan": "<",
+    "LessThanOrEqual": "<=",
+    "Equals": "==",
+    "NotEquals": "!="
+  }
+}

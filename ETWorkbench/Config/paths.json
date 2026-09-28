@@ -1,0 +1,77 @@
+﻿{
+  "$schema": "./paths.schema.json",
+  "_comment": "目录契约。所有相对路径均相对本机 DataRoot。含中文，必须 UTF-8 with BOM（约束 C-1）。",
+  "_comment2": "本文件是目录结构的唯一真相来源，模块内禁止硬编码路径（约束 C-2）。",
+
+  "SchemaVersion": "1.0.0",
+
+  "DataRoot": {
+    "Default": "C:\\ProgramData\\ETWorkbench",
+    "_comment": "可被 workstation.json 的 Local.DataRoot 覆盖。"
+  },
+
+  "LocalDirs": {
+    "Config": "Config",
+    "Snapshot": "Snapshot",
+    "SnapshotMasterData": "Snapshot\\MasterData",
+    "SnapshotRelease": "Snapshot\\Release",
+    "Commands": "Commands",
+    "Results": "Results",
+    "Outbox": "Outbox",
+    "OutboxHealth": "Outbox\\Health",
+    "OutboxAlarm": "Outbox\\Alarm",
+    "OutboxDeployment": "Outbox\\Deployment",
+    "OutboxAudit": "Outbox\\Audit",
+    "Cache": "Cache",
+    "Backup": "Backup",
+    "Logs": "Logs",
+    "Temp": "Temp"
+  },
+
+  "OutboxSubDirs": {
+    "_comment": "Outbox 下的事件类型子目录，同时也是 Upload 侧的事件类型子目录名。",
+    "Health": "Health",
+    "Alarm": "Alarm",
+    "Deployment": "Deployment",
+    "Audit": "Audit"
+  },
+
+  "Metrics": {
+    "_comment": "本机指标采集不需要额外目录；此处留白以保持结构完整。"
+  },
+
+  "ProgramDirs": {
+    "_comment": "相对绿色包根（由 $PSScriptRoot 推导，约束 C-2）。",
+    "Ui": "UI",
+    "Modules": "Modules",
+    "Tasks": "Tasks",
+    "Config": "Config"
+  },
+
+  "UploadSubDirs": {
+    "_comment": "相对 Upload\\{EquipmentId}\\{yyyy}\\{MM}\\{dd}\\。",
+    "Health": "Health",
+    "Alarm": "Alarm",
+    "Deployment": "Deployment",
+    "Audit": "Audit"
+  },
+
+  "FileNames": {
+    "Log": "et-{yyyyMMdd}.log",
+    "EventHealth": "EVT-{EquipmentId}-{yyyyMMdd}-{seq}.ndjson",
+    "EventAlarm": "ALM-{EquipmentId}-{yyyyMMdd}-{seq}.ndjson",
+    "EventDeployment": "DEP-{EquipmentId}-{yyyyMMdd}-{seq}.ndjson",
+    "EventAudit": "AUD-{EquipmentId}-{yyyyMMdd}-{seq}.ndjson",
+    "Command": "CMD-{RequestId}.json",
+    "Result": "RES-{RequestId}.json",
+    "CurrentPointer": "Current.json",
+    "_comment": "事件文件遵循 One Event = One File（约束 C-5）；seq 为当日递增序号。"
+  },
+
+  "ReleaseLayout": {
+    "_comment": "共享侧发布目录布局（方案 §5.1）。",
+    "ManifestName": "manifest.json",
+    "FilesDirName": "files",
+    "ReleaseNotesName": "release-notes.json"
+  }
+}
