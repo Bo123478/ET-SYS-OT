@@ -1,0 +1,79 @@
+# ============================================================================
+#  ET-SYS-OT  ·  换行符与文本/二进制分类基线
+# ============================================================================
+#  目的
+#    消除「同一文件在不同机器上换行符不一致」造成的伪改动与合并冲突，
+#    并修正 Git 自动探测对个别中文文件的误判。
+#
+#  ⚠ 能力边界（务必知悉）
+#    本文件只负责两件事：
+#      1) 换行符（LF / CRLF）归一
+#      2) 文本 / 二进制分类
+#    它 **无法** 固定 BOM。
+#    BOM 由 pre-push 闸门中的 `tools/Test-ETScripts.ps1 -Fix` 强制
+#    （见 tools/Install-ETHooks.ps1）。原因是 Git 的数据模型里没有 BOM 概念，
+#    任何 .gitattributes 写法都不影响 BOM。
+#
+#  依据（2026-09-28 实测 `git ls-files --eol`，共 57 个跟踪文件）
+#    51 个 i/lf   w/crlf   → 索引已是 LF、工作区 CRLF，本配置不产生任何改动
+#     4 个 i/-text w/-text → 其中 docs/ET工作台方案_Version2.md 是纯文本被误判，
+#                            本配置修正（实测 CR=235 / LF=841 混合换行，
+#                            且起首 8 字节为 `# Window`、0 个 NUL、SHA1 与索引一致）
+#     2 个 i/lf   w/lf     → 纯 LF，规范化后索引不变
+#
+#  约定
+#    索引（仓库）统一存放 LF；工作区（Windows）检出 CRLF。
+# ============================================================================
+
+# ---- 默认：自动识别文本；文本一律在工作区以 CRLF 检出 ----
+* text=auto eol=crlf
+
+# ---- PowerShell 与配置：显式声明为文本（对应约束 C-1 / C-2）----
+*.ps1       text eol=crlf
+*.psm1      text eol=crlf
+*.psd1      text eol=crlf
+*.ps1xml    text eol=crlf
+*.json      text eol=crlf
+*.ndjson    text eol=crlf
+*.xaml      text eol=crlf
+*.xml       text eol=crlf
+*.config    text eol=crlf
+*.manifest  text eol=crlf
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+
+# ---- 文档与文本：显式声明为文本 ----
+# 修正：docs/ET工作台方案_Version2.md 曾被 * text=auto 的自动探测判为二进制
+*.md        text eol=crlf
+*.txt       text eol=crlf
+*.log       text eol=crlf
+
+# ---- 二进制：禁止换行符转换与文本 diff（binary == -diff -merge -text）----
+*.xlsx      binary
+*.xls       binary
+*.docx      binary
+*.doc       binary
+*.pptx      binary
+*.ppt       binary
+*.pdf       binary
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.bmp       binary
+*.ico       binary
+*.zip       binary
+*.7z        binary
+*.rar       binary
+*.gz        binary
+*.cab       binary
+*.msi       binary
+*.exe       binary
+*.dll       binary
+*.pdb       binary
+*.snk       binary
+
+# ---- Git 自身的元文件 ----
+.gitattributes  text eol=crlf
+.gitignore      text eol=crlf
+.gitkeep        text eol=crlf
