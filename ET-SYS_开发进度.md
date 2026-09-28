@@ -1,6 +1,6 @@
 ﻿# ET-SYS 开发进度
 
-> **版本** V2.3 · **更新日期** 2026-09-28 · **配套文档** `ET-SYS_开发方案.md`
+> **版本** V2.4 · **更新日期** 2026-09-28 · **配套文档** `ET-SYS_开发方案.md`
 >
 > **更新规则（强制）**：**每完成一个任务、每解决一个阻塞、每天收工前**，
 > 必须同步更新本文件的 §1 总览、§3 任务明细、§7 更新日志。
@@ -376,9 +376,12 @@
 | **N-5** | ✅ ~~建立 `tools/Test-ETPrerequisites.ps1` 逐项验证 P-1~P-8~~（已完成并实测） | 开发 B | ~~D0~~ | ✅ |
 | **N-6** | ✅ ~~建立 `ETWorkbench/` 骨架~~（已完成：17 文件 / 8 模块 / 83 函数 / 冒烟测试 FAIL 0） | 开发 A+B | ~~D1~~ | ✅ |
 | **N-7** | 提交工作区重组到 git（含资产移动、骨架删除、新文档、ETWorkbench 骨架） | 开发 A | D0 | ⬜ |
-| **N-10** | 提交三项工程护栏：`.gitattributes`、`tools/Install-ETHooks.ps1`、`docs/interface-contract.md`，以及归正换行符后的 `docs/ET工作台方案_Version2.md`（**推送前先提交，否则钩子会因工作区不干净而拦截**） | 开发 A | D0 | ⬜ |
+| **N-10** | ✅ ~~提交三项工程护栏：`.gitattributes`、`tools/Install-ETHooks.ps1`、`docs/interface-contract.md`，以及归正换行符后的 `docs/ET工作台方案_Version2.md`~~（已完成：commit `edef1df`，5 文件 / +1654 −224） | 开发 A | ~~D0~~ | ✅ |
 | **N-11** | 🔴 **修复 D-6**：`Test-ETFreeSpace` 在目标盘不可达时静默回退到系统盘，导致 C-8 空间保护失效（见 `docs/interface-contract.md` §10.2） | 开发 B | D1 | ⬜ |
-| **N-12** | 🔴 **修复 D-3**：`paths.json` 声明 `.ndjson`、`ET.Outbox.psm1:238` 实际写 `.json`，两者必居其一（见 §10.3） | 开发 B | D1 | ⬜ || **N-8** | 🔴 **等 R-1**：共享四目录建立后，把 `Config/workstation.json` 的 `Share.ShareRoot` 填上真值，重跑一次冒烟测试 | 运维 + B | D0 | ⏸ |
+| **N-12** | 🔴 **修复 D-3**：`paths.json` 声明 `.ndjson`、`ET.Outbox.psm1:238` 实际写 `.json`，两者必居其一（见 §10.3） | 开发 B | D1 | ⬜ |
+| **N-13** | ✅ ~~**修复 D-7**：`Save-ETHealthState` 无输入校验，可写坏 `health-state.json` 并致**每轮** `Invoke-ETHealthCheck` 抛错~~（已完成：写侧抛错 + 读侧降级留痕，见 §10.4） | 开发 B | ~~D1~~ | ✅ |
+| **N-14** | 提交 D-7 修复与契约 §10.4 增补 | 开发 A | D0 | ⬜ |
+| **N-8** | 🔴 **等 R-1**：共享四目录建立后，把 `Config/workstation.json` 的 `Share.ShareRoot` 填上真值，重跑一次冒烟测试 | 运维 + B | D0 | ⏸ |
 | **N-9** | 共享可达后补做：主数据样例文件（equipment/devices/projects/applications/approved-versions）放入共享 `MasterData/` | 运维 | D0 | ⏸ |
 
 ---
@@ -472,7 +475,8 @@
 
 | 日期 | 版本 | 更新内容 | 更新人 |
 |---|---|---|---|
-| 2026-09-28 | V2.3 | **落定两人协作机制**：新增 §1.1 角色分工（A=WHB 主 / B=QYX 辅，`Config/*.json` 归 A 独占）；新增**决策 28~31**（协作方式、配置归属、接口契约冻结、推送闸门）；新增**风险 R-11**（换行符/BOM，已解除）并说明 **Git 无法强制 BOM** 的能力边界。交付三项工程护拦：`.gitattributes`、`tools/Install-ETHooks.ps1`、`docs/interface-contract.md`（ET-IFC-001 v1.0.0，83 导出函数冻结契约） | — |
+| 2026-09-28 | V2.4 | **三项护栏已提交**（`edef1df`）并在推送前跑通三道闸门（`PASS 45 / FAIL 0`）。修复新发现的 **D-7**：`Save-ETHealthState` 缺输入校验，`-State @{}` 可静默写坏 `health-state.json` 并致**此后每轮** `Invoke-ETHealthCheck` 抛错 —— 该缺陷是在编写契约做探测时被真实触发、而非推演。修复采用「写侧抛错 + 读侧降级留痕」不对称策略，理由见契约 §10.4。同时修好一处被写入挤坏的表格行（N-12 与 N-8 同行） | — |
+| 2026-09-28 | V2.3 | **落定两人协作机制**：新增 §1.1 角色分工（A=WHB 主 / B=QYX 辅，`Config/*.json` 归 A 独占）；新增**决策 28~31**（协作方式、配置归属、接口契约冻结、推送闸门）；新增**风险 R-11**（换行符/BOM，已解除）并说明 **Git 无法强制 BOM** 的能力边界。交付三项工程护栏：`.gitattributes`、`tools/Install-ETHooks.ps1`、`docs/interface-contract.md`（ET-IFC-001 v1.0.0，83 导出函数冻结契约） | — |
 | 2026-09-28 | V2.2 | **仓库远程地址变更**：`Bo123478/ET-Workstation` → **`Bo123478/ET-SYS-OT`**；首次推送成功（远端 HEAD = `52fda21`）；同步修正方案 §3.1 与决策 25 中的旧地址；修正附录「文件总数 21」为 `ETWorkbench/` **17 文件**（原数字误将 `tools/` 脚本计入） | — |
 | 2026-09-28 | V2.1 | **建成可运行工程骨架**：`ETWorkbench/` 17 文件 / 8 模块 / 83 导出函数 / XAML 界面 / 4 计划任务；新增 `Test-ETScripts.ps1`（BOM+语法）与 `Test-ETIntegration.ps1`（12 节冒烟，**PASS 45 / FAIL 0**）；实机体检取证（ExecutionPolicy=`Bypass`、BIOS SN、业务 IP、共享未配置）；**修复 5 个 StrictMode 缺陷**；范围与进度口径澄清（骨架 ≠ 功能实现）；`show-ui.ps1` 死引用修复 + Session 0 探测 | — |
 | 2026-09-28 | V2.0 | 全量重写。范围从 6 工作流收缩为 ET 端单工作流；锁定 27 项决策；解析 IT 权限清单 28 项；完成工作区重组；7 项功能全部 ⬜ 未开始；阻塞于 R-1 | — |
@@ -522,3 +526,4 @@ ET-workstation&SYS-OT/          ← git 仓库根（远程 Bo123478/ET-SYS-OT）
 | D-1 | `UI/` 下 7 个分页 `*.xaml`（方案 §5.4） | **单文件** `UI/MainWindow.xaml`，内部用 `TabControl` 分 6 个页签 | 单文件无 `ResourceDictionary` 加载顺序/路径问题，绿色包拷贝更简单；页签数量与控件引用完全一致 |
 | D-2 | 主数据录入工具为独立工具 | 并入工作台 GUI 的「主数据」页签 | 决策 21 已锁定 |
 | D-3 | `FileNames.Event*` 约定为 `.ndjson` | `ET.Outbox` 实际写 `{EventId}.json` | `New-ETEventId` 按 `.ndjson` 搜序号与写入扩展名不一致，属**外观不一致，不影响功能**；D1 统一为 `.ndjson` 或同步改 `FileNames` |
+| D-7 | `Save-ETHealthState` 应受结构校验 | 无任何校验，`-State @{}` 静默写盘并**永久锁死**健康检测 | **已修复**：写侧拒绝非法状态并抛错（与 `Save-ETHealthSnapshot` 对称）、读侧结构异常时降级为空状态并记 `Warn`。触发链与取舍见 `docs/interface-contract.md` §10.4 |

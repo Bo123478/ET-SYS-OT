@@ -892,11 +892,48 @@ $space = Test-ETFreeSpace -Path $targetDir -RequiredBytes $totalBytes
 
 **契约态度**：**暂不冻结实际扩展名**。待双方站会决定是改代码还是改配置后，再写入本文档。
 
-### 10.4 `Get-ETPath -Category File` 的模板语义（见 §3.4）
+### 10.4 D-7：`Save-ETHealthState` 无输入校验，可写坏状态机并**永久锁死健康检测**（**真实缺陷，已修复**）
+
+| 位置 | 内容 |
+|---|---|
+| `ET.Health.psm1` → `Save-ETHealthState` | 仅 `[Parameter(Mandatory)]`，**无结构校验**，直接把入参序列化覆盖 `health-state.json` |
+| `ET.Health.psm1` → `Get-ETHealthState` | 只用 `try/catch` 包 `ConvertFrom-Json`，**不校验 `Rules` 是否存在** |
+| `ET.Health.psm1` → `Invoke-ETHealthCheck` | 后续直接访问 `$state.Rules`，StrictMode 下缺该属性**抛异常** |
+
+**触发链**（本缺陷是在编写本文档的探测过程中被真实触发的，非推演）：
+
+1. `Save-ETHealthState -State @{}` —— 语法合法、`ConvertFrom-Json` 亦不报错，故**静默写入** `{}`；
+2. 文件变成 11 字节的 `{}`；
+3. 此后**每一轮** `Invoke-ETHealthCheck` 都在 `$state.Rules` 处失败：
+   `在此对象上找不到属性"Rules"。请确认该属性存在。`
+4. 因 `health-last.json` 与 `health-state.json` 是**两个**文件，健康快照看上去仍正常，
+   缺陷只在状态机路径上暴露 —— 排查成本高。
+
+**对既有代码约定的偏离**：孪生函数 `Save-ETHealthSnapshot` 早已有同类防线，
+其注释原文即写着「**曾经因为这种误传写坏过 health-last.json**」。
+`Save-ETHealthState` 漏了同一道防线 —— 同一文件内两处不对称。
+
+**修复**（三处，均已落地）：
+
+| # | 位置 | 措施 |
+|---|---|---|
+| 1 | `Save-ETHealthState` | 拒绝非对象 / 缺 `Rules` 的输入，**抛错而非写盘**，与 `Save-ETHealthSnapshot` 对称 |
+| 2 | `Get-ETHealthState` | 解析成功但缺 `Rules` 时归一化为空状态并 `Write-ETLog -Level Warn`（**降级但留痕，不静默**），
+避免历史坏文件把检测**永久锁死** |
+| 3 | 运维动作 | 清理已被污染的 `health-state.json` |
+
+**为什么选「写侧抛错 + 读侧降级」而不都抛错**：写侧是**主动犯错的**调用点，必须立刻失败；
+读侧面对的是**已经存在的**历史文件，崩溃只会让终端彻底失去健康检测能力，
+而 `UnknownIsNotFault`（方案 §6.5 / G-6）的既有语义正是「取不到数 ≠ 故障」，故降级更符合设计。
+
+**接口影响**：`Save-ETHealthState` 的**抛错语义**自此纳入契约（属 §3.2 类别），
+在本文档 §4.6 的签名表中标注为会抛错。
+
+### 10.5 `Get-ETPath -Category File` 的模板语义（见 §3.4）
 
 严格说这不是缺陷，但**极易误用**，故在此重复：`File` 类返回**模板字符串**，不是路径。
 
-### 10.5 `C-1` 编码合规现状（**与接口无关但影响提交**）
+### 10.6 `C-1` 编码合规现状（**与接口无关但影响提交**）
 
 | 文件范围 | BOM | 状态 |
 |---|---|---|

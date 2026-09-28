@@ -241,16 +241,42 @@ function Get-ETHealthState {
     if (-not (Test-Path -LiteralPath $f)) {
         return [pscustomobject]@{ SchemaVersion = '1.0.0'; Rules = [pscustomobject]@{} }
     }
-    try { return (Get-Content -LiteralPath $f -Raw -Encoding UTF8 | ConvertFrom-Json) }
-    catch { return [pscustomobject]@{ SchemaVersion = '1.0.0'; Rules = [pscustomobject]@{} } }
+
+    $doc = $null
+    try { $doc = Get-Content -LiteralPath $f -Raw -Encoding UTF8 | ConvertFrom-Json } catch { $doc = $null }
+
+    # 语法能解析但结构不对（例如被写成了 {}）时，ConvertFrom-Json 不会抛错，
+    # 于是坏状态会一路传到 $state.Rules 处才炸，表现为每轮检测都失败。
+    # 这里显式归一化为空状态并记 Warn —— 记录在案，不是静默吞掉。
+    if ($null -eq $doc -or -not (Test-ETObjectHasProperty -InputObject $doc -Name 'Rules')) {
+        Write-ETLog -Message 'health-state.json 结构不合法（缺少 Rules），已按空状态继续' -Level Warn -Data @{ File = $f }
+        return [pscustomobject]@{ SchemaVersion = '1.0.0'; Rules = [pscustomobject]@{} }
+    }
+
+    return $doc
 }
 
 function Save-ETHealthState {
     <#
       .SYNOPSIS  原子保存健康状态机。
+      .NOTES
+        必须传入【健康状态对象】（含 Rules）。与 Save-ETHealthSnapshot 同理，
+        对非对象 / 缺 Rules 的输入直接报错，而不是写出一份坏状态机。
+
+        为什么必须守：Get-ETHealthState 读回结果后，调用方要访问 $state.Rules；
+        在本模块的 Set-StrictMode -Version 2.0 下，对不含该属性的对象读属性会
+        【抛异常】。因此一旦写坏，后续每一轮 Invoke-ETHealthCheck 都会失败，
+        而不是优雅降级 —— 坏状态比没有状态更危险。
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)]$State)
+
+    if ($null -eq $State -or $State -is [string] -or $State -is [System.Collections.IEnumerable]) {
+        throw "Save-ETHealthState 需要健康状态对象（含 Rules），实际收到：$($State.GetType().FullName)"
+    }
+    if (-not (Test-ETObjectHasProperty -InputObject $State -Name 'Rules')) {
+        throw 'Save-ETHealthState 收到的对象缺少 Rules 字段，不是合法的健康状态机，已拒绝写入以保护 health-state.json。'
+    }
 
     $f = Join-Path (Get-ETPath -Category LocalDir -Name Snapshot -Ensure) 'health-state.json'
     Write-ETJsonAtomic -LiteralPath $f -InputObject $State -Depth 8
