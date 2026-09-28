@@ -1,78 +1,61 @@
-## .NET 构建产物
-[Bb]in/
-[Oo]bj/
-[Dd]ebug/
-[Rr]elease/
-[Ll]og/
-[Ll]ogs/
+## ============================================================
+## ET 工作台 / SYS-OT 工作区
+## ============================================================
+
+## 本地分析与临时工具（不进版本库）
+.tools/
+.tools-tmp/
+
+## ETWorkbench 运行期数据（严禁入库：含现场数据、上传队列、日志）
+ETWorkbench/Data/
+ETWorkbench/Outbox/
+ETWorkbench/Logs/
+ETWorkbench/**/bin/
+ETWorkbench/**/obj/
+**/Outbox/*.ndjson
+**/*.ndjson
 *.log
 *.tlog
 *.binlog
+*.trx
 
-## Visual Studio / Rider / VS Code
+## 本地配置覆盖与密钥
+*.secrets.json
+appsettings.Local.json
+*.pfx
+*.snk
+*.key
+*.pem
+
+## Office / Windows 临时文件
+~$*
+*.tmp
+*.bak
+*.orig
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+## IDE
 .vs/
+.idea/
+*.user
+*.suo
+*.DotSettings.user
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-*.rsuser
-_ReSharper*/
-*.DotSettings.user
-.idea/
 
-## 测试与覆盖率
-[Tt]est[Rr]esult*/
-TestResults/
-*.trx
-*.coverage
-*.coverlet.json
-coverage*.json
-coverage*.xml
-[Cc]overage/
+## Python（SYS-OT 侧可能使用）
+__pycache__/
+*.py[cod]
+.venv/
+venv/
 
-## NuGet
-*.nupkg
-*.snupkg
-packages/
-!packages/build/
-.nuget/
-
-## 安装器产物
-installer/output/
-installer/*.msi
-installer/*.exe
-installer/*.cab
-installer/**/obj/
-installer/**/bin/
-
-## Windows / 桌面
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-$RECYCLE.BIN/
-*.lnk
-
-## OneDrive / 临时文件
-*.tmp
-~$*
-*.~*
-*.bak
-*.orig
-*.rej
-
-## SQLite 本地库（运行时生成）
-*.db
-*.db-shm
-*.db-wal
-*.sqlite
-
-## 敏感信息
-*.pfx
-*.snk
-appsettings.Local.json
-*.secrets.json
+## Databricks / Terraform 状态（如后续引入）
+*.tfstate
+*.tfstate.*
+.terraform/
