@@ -1,6 +1,6 @@
 ﻿# ET-SYS 开发进度
 
-> **版本** V2.4 · **更新日期** 2026-09-28 · **配套文档** `ET-SYS_开发方案.md`
+> **版本** V2.7 · **更新日期** 2026-09-29 · **配套文档** `ET-SYS_开发方案.md`
 >
 > **更新规则（强制）**：**每完成一个任务、每解决一个阻塞、每天收工前**，
 > 必须同步更新本文件的 §1 总览、§3 任务明细、§7 更新日志。
@@ -51,7 +51,7 @@
 | **E-04** | 一键下载 | B | 3 | 骨架已建（计划/空间/原子发布/历史） | 🟡 |
 | **E-05** | 健康检测与最小上报 | B | 4 | 骨架已建（9 条规则实采 7 条 + Outbox 闭环） | 🟡 |
 | **E-06** | 工作台自更新 | A | 2 | 骨架已建（版本切指针 + 回滚 + 冒烟） | 🟡 |
-| **E-07** | GUI 界面 | A | 4 | 骨架已建（单文件 XAML，6 页签可加载） | 🟡 |
+| **E-07** | GUI 界面 | A | 4 | 骨架已建（三区桌面布局 + 常驻铭牌条，桌面语义已实现） | 🟡 |
 | | **合计** | | **20** | **骨架 100%，实现 0%** | 🟡 |
 
 > **🟡 的准确含义**："骨架/契约/降级路径已就位并通过冒烟测试"，不是"功能可用"。
@@ -77,6 +77,22 @@
 | 15 | **建 `docs/interface-contract.md`**（ET-IFC-001 v1.0.0）：83 个导出函数的冻结契约 | ✅ |
 | 16 | **确认角色分工**：A = WHB（主）／ B = QYX（辅），`Config/*.json` 归 A 独占（见 §1.1） | ✅ |
 
+### 已完成工作（2026-09-29 本次会话）
+
+| # | 事项 | 状态 |
+|---|---|---|
+| 1 | **主窗口三区桌面布局（档位 3）**：`MainWindow.xaml` 重写为「左上软件区 / 右上信息区 / 右下报警区」，隐藏 `MainTabs` 路由保留旧导航语义 | ✅ |
+| 2 | **桌面语义三条需求全部实现**：默认铺满工作区、任务栏不显示、永远最低层（详见 §3.0 新增小节） | ✅ |
+| 3 | ~~**常驻铭牌由竖版卡片改为 340×88 横向铭牌条**：与顶栏 `PlateSlot` 像素级重合，像主窗口的一个组件~~ | ⚠️ 已被 V2.6 `T-30` 反转 |
+| 4 | **`Start-ETTray.ps1` / `UI/TrayBadge.xaml` / `Start-ETTray.bat` 全量重命名为 `Start-ETPlate.ps1` / `UI/PlateBar.xaml` / `Start-ETPlate.bat`**（旧名文件已删除，脚本/文档引用同步） | ✅ |
+| 5 | **两处逃逸通道**：顶栏「关闭工作台」按钮 + 哨兵文件 `workbench.stop` / `plate.stop`（3s / 30s 轮询自退） | ✅ |
+| 6 | **两个入口脚本加 Session 0 守卫**，无交互桌面下静默退出 | ✅ |
+| 7 | **报警三态「都归红」定案**：`W-01`（未接入共享）与 `W-02`（设备未识别）由 `Warn` 改 `Alarm`；`W-03`（待上报）仍 `Warn` | ✅ |
+| 8 | **修复 BOM 缺失**：`Start-ETPlate.ps1` / `PlateBar.xaml`（曾伪装为 41 个语法错误），`Test-ETScripts.ps1` 现扫 **20 + 3 + 2** | ✅ |
+| 9 | **消除重复的 `SinkTimer` 滴答注册**并补注释说明位置 | ✅ |
+| 10 | **三道闸门全绿**：`ALL CHECKS PASSED` / `PASS 45 FAIL 0 WARN 1` / `13 通过` | ✅ |
+| 11 | **建立并回写 `ET-项目待办事项.md`**（V1.2，未完成 35 / 已闭环 21），作为待办唯一汇聚点 | ✅ |
+
 ### 1.1 角色分工与模块归属
 
 **A = WHB（主）** ｜ **B = QYX（辅）**
@@ -93,8 +109,10 @@
 | `Modules/ET.Update.psm1` | 10 | **A** | A 主改 |
 | `Tasks/*.ps1` | — | **B** | B 主改 |
 | `UI/MainWindow.xaml` | — | **A** | A 主改 |
+| `UI/PlateBar.xaml` | — | **A** | A 主改（常驻铭牌：**316×248 竖向卡**，停靠工作区**左边缘、垂直居中**；已**不与 `MainWindow` 顶栏做像素对齐**——原 340×88 对齐契约已随 `T-30` 解除） |
 | `Start-ETWorkbench.ps1` | — | **A** | A 主改 |
-| **`Config/*.json`** | — | **A** | **A 独占。B 不直接编辑，需变更时在站会提出** |
+| `Start-ETPlate.ps1` | — | **A** | A 主改（含内嵌 C# `ETPlateNative`/`ETPlateActivate`） |
+| `Config/*.json` | — | **A** | **A 独占。B 不直接编辑，需变更时在站会提出** |
 | `tools/*.ps1` | — | **共享** | 闸门脚本，改动会同时影响两人推送 |
 
 > **冲突热点**：`Config/*.json`（`Get-ETConfig` 的键被全部 83 个函数消费）与
@@ -160,14 +178,15 @@
 
 | 项 | 数量 | 说明 |
 |---|---:|---|
-| 入口脚本 | 1 | `Start-ETWorkbench.ps1`（`-SelfTest` / `-Console`） |
+| 入口脚本 | 2 | `Start-ETWorkbench.ps1`（`-SelfTest` / `-Console`）、`Start-ETPlate.ps1`（常驻铭牌） |
 | 模块 | 8 | `ET.Core / Identity / MasterData / Software / Transfer / Health / Outbox / Update` |
 | 导出函数 | **83** | Core 24 · Identity 7 · MasterData 7 · Software 6 · Transfer 7 · Health 10 · Outbox 12 · Update 10 |
 | 配置文件 | 3 | `workstation.json` / `paths.json` / `health-rules.json` |
-| 界面 | 1 | `UI/MainWindow.xaml`（6 页签，24 个控件引用全解析） |
+| 界面 | 2 | `UI/MainWindow.xaml`（三区桌面布局，**37** 个 `x:Name`）+ `UI/PlateBar.xaml`（铭牌，**13** 个 `x:Name`） |
 | 计划任务脚本 | 4 | `Register-ETTasks` / `Invoke-HealthMonitor` / `Publish-Outbox` / `Watch-Commands` |
 | 校验工具 | 3 | `Test-ETScripts.ps1` / `Test-ETIntegration.ps1` / `Test-ETPrerequisites.ps1`（位于 `tools/`） |
-| **`ETWorkbench/` 文件总数** | **17** | 全部 UTF-8 with BOM（C-1），全部语法通过 |
+| 根目录启动器 | 2 | `Start-ETWorkbench.bat` / `Start-ETPlate.bat`（免打印窗口双击启动） |
+| **`ETWorkbench/` 文件总数** | **19** | 全部 UTF-8 with BOM（C-1），全部语法通过 |
 | `tools/` 脚本总数 | 5 | 上述 3 个 + `show-ui.ps1` / `check-appcontrol.ps1` |
 
 #### 各模块交付内容
@@ -218,12 +237,44 @@
 
 | 项 | 结果 |
 |---|---|
-| `-SelfTest` | ✅ 退出码 0，13 项检查全通过 |
-| XAML 解析 + `FindName` | ✅ 8 个关键控件全部解析到 |
-| `$ui.<Name>` 静态引用 | ✅ **24/24 全部解析**（冒烟测试自动校验） |
+| `tools/Test-ETScripts.ps1` | ✅ 全量校验 **20 个 `.ps1/.psm1` + 3 JSON + 2 XAML**（`RESULT: ALL CHECKS PASSED`，EXIT=0） |
+| `tools/Test-ETIntegration.ps1` | ✅ 12 节冒烟，**PASS 45 / FAIL 0 / WARN 1**（WARN = 主数据快照为空跳过软件汇总，与基线一致） |
+| `Start-ETWorkbench.ps1 -SelfTest` | ✅ 退出码 0，**13 项检查全通过**，结论「自检通过」 |
+| XAML 解析 + `FindName` | ✅ `MainWindow.xaml` **37** 个 `x:Name`、`PlateBar.xaml` **13** 个，均可 `XamlReader::Load`；且经**无头加载器逐名核对**，脚本所引用的名字全部命中（无悬空引用） |
+| `$ui.<Name>` 静态引用 | ✅ 主窗口 **42/42**、铭牌 **9/9** 全部解析（脚本内引用 ↔ XAML 命名逐一比对通过） |
 | `ShowDialog()` 是否被走到 | ✅ 控制台日志停在 `[ET] 窗口已就绪` 后进程持续挂住且 stderr 为空 —— 即**模态循环特征**，证明已走到显示步骤 |
 | 截图取证 | ⚠️ **无法完成**：当前终端运行在 **Session 0**（无交互桌面），连 3 行最小 WPF 程序也无法显示窗口，属**环境限制而非代码缺陷**。已给 `tools/show-ui.ps1` 加前置探测，在 Session 0 下直接输出说明并以退出码 2 退出，不再报超时错误 |
 | 待办 | ⬜ 在真实交互桌面（现场机/样机）跑一次 `tools/show-ui.ps1` 补截图取证 |
+
+#### 🖥️ 桌面语义与常驻铭牌（2026-09-29 新增，✅ 已实现并通过三道闸门）
+
+> 现场要求把工作台做成「像桌面一样」。**不做真 Shell 替换**（三条硬理由）：
+> ① 方案 §3.1/§20 明文自禁；② **Shell Launcher 仅 Enterprise/Education/IoT Enterprise 可用，
+> 不支持 Windows 专业版**（现场即专业版）；③ 业务软件需 24h 常驻，接管 Shell 会连坐其生命周期，撞红线 F-1/F-2。
+> ⇒ 做法是**像桌面但留退路**：不设 `Topmost`（红线 F-4）、不写注册表、不接管 Shell。
+
+| 需求 | 实现要点 | 文件/函数 |
+|---|---|---|
+| ① 默认铺满工作区、任务栏不显示 | `WindowStyle=None` + `ResizeMode=NoResize` + `ShowInTaskbar=False`；`Enter-ETDesktopMode` 把 `Left/Top/Width/Height` 手工贴合 `SystemParameters.WorkArea`（**不用 `WindowState=Maximized`**，其 GDI 缓存坐标会漏任务栏/多屏算错）；`SourceInitialized` 里按位或 `WS_EX_TOOLWINDOW` 使 Alt+Tab 也不出现 | `MainWindow.xaml`、`Enter`/`Exit-ETDesktopMode`、`Toggle-FullScreen`、`Update-FullScreenLabel` |
+| ② 永远处于所有窗口最低层 | `SetWindowPos(HWND_BOTTOM, …, SWP_NOMOVE|SWP_NOSIZE|SWP_NOACTIVATE)`（**不是 Topmost —— F-4 禁的是置顶，不禁沉底**）；`Add_Activated`/`Add_Deactivated` 立即沉底 + `SinkTimer` 每 3 秒兜底（应对业务软件自行置顶、或有人把窗口藏到下面）；重入保护 `$script:Sinking` | `ETWindowNative`（内嵌 C#）、`Set-ETWindowBottom`、`$script:SinkTimer` |
+| ③ ~~铭牌移到左上角、像主窗口的组件~~ **铭牌独立常驻，停靠左边缘垂直居中**（`T-30` 反转本行原方案） | **已回退为原版式**：`PlateBar.xaml` 恢复为**316×248 竖向工业铭牌卡**（源自原 `TrayBadge.xaml`），停靠 `Left = WorkArea.Left`、`Top = round(WorkArea.Top + (WorkArea.Height - 窗口高)/2)`；与主窗口**不做任何像素对齐**，顶栏 `PlateSlot` 槽位已**整体移除**。原「340×88 横向矮条像素重合」方案**作废**（`T-26 详情` 已标注不再适用）。**唯一与原设计的偏离**：`Topmost` 由 `True` 改为 `False`（红线 F-4），改由 `HWND_BOTTOM` 沉底，**不可回退** | `UI/PlateBar.xaml`、`Start-ETPlate.ps1`（`Sync-PlatePosition` + `Add_SizeChanged`）、`UI/MainWindow.xaml`、根目录 `Start-ETPlate.bat` |
+
+**逃逸通道（必须写进现场运维手册）**：两窗口均无标题栏、不在任务栏、且永远沉底，
+业务软件全屏时关闭入口可能点不到 ⇒
+- 顶栏右上角「关闭工作台」按钮（`BtnCloseWindow`，红底 `DangerBtn`）；
+- 哨兵文件（主窗口 3 秒轮询、铭牌 30 秒轮询，删文件即自退）：
+  ```powershell
+  New-Item -ItemType File -Force "$env:ProgramData\ETWorkbench\Local\Snapshot\workbench.stop"
+  New-Item -ItemType File -Force "$env:ProgramData\ETWorkbench\Local\Snapshot\plate.stop"
+  ```
+
+**已确认的能力边界**：`F11`/`Esc` 在窗口失焦时收不到（不可见的沉底窗口拿不到键盘），已改用按钮 —— 现场可接受。
+两个入口脚本均加 **Session 0 守卫**（`[System.Environment]::UserInteractive` 为 `False` 时打印说明并 `exit 0`），
+避免计划任务/服务/远程无桌面会话下抛异常。
+
+> ⚠️ **本次收敛了两处兼容性隐患**：删除了重复注册的 `SinkTimer` 滴答处理；补回 `Start-ETPlate.ps1` 与
+> `PlateBar.xaml` 的 UTF-8 BOM（无 BOM 曾伪装成 41 个语法错误，详见待办 **`G-01`**／`D-07`；
+> 注意 `G-06` 是另一件事：局部替换编辑工具的「部分匹配」静默污染）。
 
 ---
 
@@ -354,12 +405,14 @@
 | E-07 | GUI 界面 | 5 页签 + 中文无乱码 | ⬜ |
 | G-1 | 免安装 | 拷贝即用 | ⬜ |
 | G-2 | 路径无关 | 任意目录可运行 | ⬜ |
-| G-3 | 编码正确 | UTF-8 BOM 无乱码 | ⬜ |
-| G-4 | 安全红线 | §10 无违反 | ⬜ |
+| G-3 | 编码正确 | UTF-8 BOM 无乱码 | ✅ 闸门已强制（`Test-ETScripts.ps1` 扫 20+3+2，缺 BOM 即拦） |
+| G-4 | 安全红线 | §10 无违反 | 🟡 桌面语义已自查（无 `Topmost`、无结束/覆盖业务软件、无强制抢焦点），待现场复核 |
 | G-5 | 共享权限 | 下行目录写被拒绝 | ⬜ |
 | G-6 | 断网可用 | 入口与健康仍可用 | ⬜ |
 | G-7 | 并发安全 | 同时仅 1 个下载 | ⬜ |
 | G-8 | 幂等 | 重复任务不产生重复事件 | ⬜ |
+| **G-9** | **桌面语义** | 默认铺满工作区、任务栏无图标、永远最低层不遮挡业务软件 | 🟡 代码与旁证已就绪（含 `T-30` 后铭牌**垂直居中坐标实测**：1024×768 工作区 → `Left=0`、`Top=260`、下边缘 `508`，完整落在工作区内不压任务栏），**待真实桌面验收**（N-18/N-19）。⚠️ 竖版铭牌会**盖住软件区卡片左边缘**，需与 `B-12` 一并现场确认 |
+| **G-10** | **逃逸通道可用** | 顶栏关闭按钮 + `workbench.stop` / `plate.stop` 哨兵均可退出 | 🟡 已实现（铭牌右键菜单文案已同步为「退出铭牌…」，确认框文案改为「左边缘」），**待真实桌面验收** |
 | M-1 | 样机 | 1 台全功能跑通 | ⬜ |
 | M-2 | 现场试点机 | 2 台（跨现场）通过 | ⬜ |
 
@@ -383,6 +436,14 @@
 | **N-14** | 提交 D-7 修复与契约 §10.4 增补 | 开发 A | D0 | ⬜ |
 | **N-8** | 🔴 **等 R-1**：共享四目录建立后，把 `Config/workstation.json` 的 `Share.ShareRoot` 填上真值，重跑一次冒烟测试 | 运维 + B | D0 | ⏸ |
 | **N-9** | 共享可达后补做：主数据样例文件（equipment/devices/projects/applications/approved-versions）放入共享 `MasterData/` | 运维 | D0 | ⏸ |
+| **N-15** | ✅ ~~**实现桌面语义三条需求**：默认铺满工作区 + 任务栏不显示 + 永远最低层（`HWND_BOTTOM`，非 `Topmost`，不违 F-4）~~（已完成：`Enter/Exit-ETDesktopMode`、`Set-ETWindowBottom`、`WS_EX_TOOLWINDOW`、3 秒 `SinkTimer`；三道闸门全绿） | 开发 A | ~~D0~~ | ✅ |
+| **N-16** | ✅ ~~**常驻铭牌改造**：竖版卡片 → 340×88 横向条，与顶栏 `PlateSlot` 像素级重合~~（**已由 `T-30` 反转**：回退为 316×248 竖版卡、左边缘垂直居中，`PlateSlot` 已移除；但**文件重命名**这一部分仍有效：旧名 `TrayBadge`/`Start-ETTray` 全量重命名为 `PlateBar`/`Start-ETPlate`，全文引用已同步） | 开发 A | ~~D0~~ | ✅ |
+| **N-17** | ✅ ~~**修 `Start-ETPlate.ps1` / `PlateBar.xaml` 缺失 BOM**~~（已完成：`tools/Test-ETScripts.ps1 -Fix`，随后闸门全绿） | 开发 A | ~~D0~~ | ✅ |
+| **N-18** | ⬜ **现场机上用 `tools/show-ui.ps1` 做一次真实桌面视觉验收**：确认铭牌**左边缘垂直居中**、不压任务栏、无遮挡争议、无高 DPI 接缝（对应待办 T-23 / T-31） | 开发 A + 运维 | 样机到位后 | ⬜ |
+| **N-19** | ⬜ **现场接受度确认**：「永远最低层」与「失焦后 F11/Esc 不可用」需现场试用确认可接受，并**把哨兵文件逃逸命令写进现场运维手册**（对应待办 B-12） | 开发 + 运维 | 样机到位后 | ⬜ |
+| **N-20** | ⬜ **评估是否抽出共享 `psm1`** 承载主窗口与铭牌重复的内嵌 C# 类（`ETWindowNative`/`ETPlateNative`）；若做需同步 `docs/interface-contract.md` 冻结面（对应待办 B-13） | 开发 A | D1 后 | ⬜ |
+| **N-21** | ⬜ **补主数据 schema**：`equipment.json` 增加 `EtCode` / `MpcCode` 字段，否则铭牌恒走「示例」分支 | 开发 B | D1 | ⬜ |
+| **N-22** | ⬜ **修 D-09（主窗口控制台黑窗）**：双击 `Start-ETWorkbench.bat` 会闪/留一个黑控制台窗，与「像桌面组件」观感冲突（经铭牌启动时已由 `-WindowStyle Hidden` + `CreateNoWindow` 遮住）。**注意 `-Console` 调试入口必须保持可见** | 开发 A | D1 | ⬜ |
 
 ---
 
@@ -475,6 +536,9 @@
 
 | 日期 | 版本 | 更新内容 | 更新人 |
 |---|---|---|---|
+| 2026-09-29 | V2.7 | **文档一致性与工具链护栏（无代码改动）**。① **修复待办文档坏行**：`ET-项目待办事项.md` §6 更新日志的 **`V1.3` 行与 `V1.4` 行被挤成同一物理行**（1593 字符）——这是本仓库第 5 次表格坏行事故，已拆为两行（同次另有 1 次记忆文件整块重复事故）；② **新增待办 `G-06`**（工程护栏，P1）：「局部替换类编辑工具的部分匹配静默污染」——`oldString` 只命中行/块前半部分时，未被覆盖的尾巴会原样保留并拼在新内容之后；详情表列出**全部 6 次事故**与四条硬性要求（含 **PS 5.1 降序区间 `$L[575..574]` 不返回空数组、会反向重复写回** 这条本次实测踩到的坑）；③ **修复知识库文件**：`/memories/repo/et-workbench.md` 由 **282 行**（含重复的 `## 身份`~`## 关键陷阱` 整段）修回 **237 行**，13 个 `##` 标题全部唯一，无 BOM 状态保持不变；④ **纠正一处陈旧交叉引用**：本文件 §3.3 曾把 `PlateBar.xaml` 补 BOM 的事写成「待办 D-07/G-06」，**`G-06` 与 BOM 无关**，已改指 **`G-01`**／`D-07` 并加注区分；⑤ **版本号对齐**：本文件 V2.6 → **V2.7**，附录目录树里的待办版本由 **V1.3 → V1.5**、本文件由 V2.6 → V2.7；⑥ **待办文档升版**：`ET-项目待办事项.md` V1.4 → **V1.5**（新增 `G-06` 进 §3.4 与 §1 P1 看板、§1.2 统计同步为 **未完成 39 / 已闭环 22**、`G` 类 4 → 5）。**文档类改动，未触碰任何 `.ps1`/`.xaml`/`.json` 与 83 个导出函数**；表格完整性自检已跑（`bad table rows: 0`），BOM 状态：本文件**有 BOM**、待办文档**无 BOM**（均维持原状） | — |
+| 2026-09-29 | V2.6 | **铭牌方向反转：回退为原尺寸式样 + 左侧垂直居中**（依用户指令「使用原来的尺寸和式样，位置左侧居中」）。① `PlateBar.xaml` 由 340×88 横向矮条**重写回原 `TrayBadge.xaml` 的 316×248 竖向工业铭牌卡**（13 个 `x:Name`，5 行版式，`StatusPill` 新增为具名元素），**与原设计的唯一刻意偏离是 `Topmost` 由 `True` 改为 `False`**（红线 **F-4** 禁置顶），沉底改由 `HWND_BOTTOM` 承担，文件头已注明**不可回退**；② `Start-ETPlate.ps1` 的 `Sync-PlatePosition` 重写为 **`Left = WorkArea.Left` / `Top = round(WorkArea.Top + (H-窗口高)/2)`**（`ActualHeight` 优先、缺失时回退 `Height`、再回退 `248`；`[math]::Round` 避免半像素抖动），新增 **`Add_SizeChanged` 钩子**解决 `ActualHeight` 首帧未就绪，`$Script:ui` 由 **9 → 11** 项（补 `TxtBadgeVer`/`TxtUpdated`/`StatusPill`）并修掉 `RootBorder.ToolTip` 被每次刷新覆盖的缺陷，右键菜单/确认框文案同步为「铭牌」「左边缘」；③ **移除主窗口顶栏 `PlateSlot`**（经 `git show f5123e9` 核对，该槽位**非原始设计**，只是为矮条像素对齐而加）—— 主窗口 `x:Name` **46 → 37**、顶栏由 3 列并为 2 列，同时清理 `Start-ETWorkbench.ps1` 的死代码（删 `Update-PlateStrip`、清 `TxtTitle`/`TxtStatus`/`HdrStrip`/`TxtPlate*` 引用，保留仍被摘要使用的 `Get-ETFirstValue`/`Resolve-ETPlateInfo`）；④ **状态色不丢失**：`StatusBarDot` 迁入底部状态条（新增第 6 个 `Auto` 列）；⑤ **文档同步**：`MainWindow.xaml`/`Start-ETPlate.bat` 陈旧注释改写，`ET-项目待办事项.md` 回写 **V1.4**（新增并闭环 `T-30`、新增 `T-31`、`T-26`/`B-08` 结论作废标注、统计 38/22）。**三道闸门全绿**：`ALL CHECKS PASSED`（并以 `-Fix` 补回 `PlateBar.xaml` 的 BOM）/ `PASS 45 FAIL 0 WARN 1` / `-SelfTest 13 通过`；另用**无头 XAML 加载器逐名核对**（脚本引用的 37 + 12 个名字全命中、无悬空引用），并实测居中坐标（1024×768 工作区 → `Left=0`、`Top=260`）。**未动任何模块与 83 个导出函数**，`docs/interface-contract.md` 未改；⚠️ 已知未解决：竖版铭牌会盖住软件区卡片左边缘（需 `B-12`/`T-31` 现场确认）、`D-09` 控制台黑窗未修、§4 表 `T-17`~`T-22` 编号重复（历史遗留，本次不改编号） | — |
+| 2026-09-29 | V2.5 | **桌面语义落地 + 常驻铭牌改造**。① `MainWindow.xaml` 重写为**三区桌面布局**（左上软件区 / 右上信息区 / 右下报警区），保留零尺寸隐藏 `MainTabs` 路由以继承旧导航语义；② 实现现场三条硬需求 —— **默认铺满工作区**（手工贴合 `WorkArea`，不用 `Maximized`）、**任务栏不显示**（`ShowInTaskbar=False` + `WS_EX_TOOLWINDOW`）、**永远处于最低层**（`SetWindowPos(HWND_BOTTOM)` + `SWP_NOACTIVATE`，**这不是 `Topmost`，红线 F-4 禁置顶不禁沉底**，另加 3 秒 `SinkTimer` 兜底）；③ 常驻铭牌由 316×248 竖版卡片改为 **340×88 横向条**，与顶栏 `PlateSlot` 像素级重合；④ 旧名 `TrayBadge`/`Start-ETTray` **全量重命名**为 `PlateBar`/`Start-ETPlate`（旧文件已删）；⑤ 新增两处逃逸通道（顶栏关闭按钮 + 哨兵文件 `workbench.stop`/`plate.stop`）与两入口的 **Session 0 守卫**；⑥ **报警三态「都归红」**（`W-01`/`W-02` 改 `Alarm`）；⑦ 修复 `Start-ETPlate.ps1`/`PlateBar.xaml` **缺失 BOM**（曾伪装为 41 个语法错误）；⑧ 消除重复的 `SinkTimer` 滴答注册；⑨ 建立 `ET-项目待办事项.md` 并回写 V1.2。**三道闸门全绿**：`ALL CHECKS PASSED`（20+3+2）/ `PASS 45 FAIL 0 WARN 1` / `-SelfTest 13 通过`。**未动任何模块与 83 个导出函数**，`docs/interface-contract.md` 未改 | — |
 | 2026-09-28 | V2.4 | **三项护栏已提交**（`edef1df`）并在推送前跑通三道闸门（`PASS 45 / FAIL 0`）。修复新发现的 **D-7**：`Save-ETHealthState` 缺输入校验，`-State @{}` 可静默写坏 `health-state.json` 并致**此后每轮** `Invoke-ETHealthCheck` 抛错 —— 该缺陷是在编写契约做探测时被真实触发、而非推演。修复采用「写侧抛错 + 读侧降级留痕」不对称策略，理由见契约 §10.4。同时修好一处被写入挤坏的表格行（N-12 与 N-8 同行） | — |
 | 2026-09-28 | V2.3 | **落定两人协作机制**：新增 §1.1 角色分工（A=WHB 主 / B=QYX 辅，`Config/*.json` 归 A 独占）；新增**决策 28~31**（协作方式、配置归属、接口契约冻结、推送闸门）；新增**风险 R-11**（换行符/BOM，已解除）并说明 **Git 无法强制 BOM** 的能力边界。交付三项工程护栏：`.gitattributes`、`tools/Install-ETHooks.ps1`、`docs/interface-contract.md`（ET-IFC-001 v1.0.0，83 导出函数冻结契约） | — |
 | 2026-09-28 | V2.2 | **仓库远程地址变更**：`Bo123478/ET-Workstation` → **`Bo123478/ET-SYS-OT`**；首次推送成功（远端 HEAD = `52fda21`）；同步修正方案 §3.1 与决策 25 中的旧地址；修正附录「文件总数 21」为 `ETWorkbench/` **17 文件**（原数字误将 `tools/` 脚本计入） | — |
@@ -491,7 +555,10 @@ ET-workstation&SYS-OT/          ← git 仓库根（远程 Bo123478/ET-SYS-OT）
 ├─ .git/                        ← 由 ET-Workstation/.git 上提而来
 ├─ .gitignore                   ← 新建（含 ETWorkbench 运行期数据排除）
 ├─ ET-SYS_开发方案.md            ← V2.0 已重写
-├─ ET-SYS_开发进度.md            ← V2.2 本文件
+├─ ET-SYS_开发进度.md            ← V2.7 本文件
+├─ ET-项目待办事项.md            ← 待办唯一汇聚点（V1.5，无 BOM，见 G-01）
+├─ Start-ETWorkbench.bat        ← 双击启动工作台
+├─ Start-ETPlate.bat            ← 双击启动常驻铭牌条
 ├─ 现场数字化运维最终方案_PowerShell_M365_Databricks.md   ← 权威 ET 基线（未改）
 ├─ 数字化运维平台_AI_Agent总体架构 2.pptx                ← 根目录原有
 ├─ docs/
@@ -506,11 +573,12 @@ ET-workstation&SYS-OT/          ← git 仓库根（远程 Bo123478/ET-SYS-OT）
 │  └─ Test-ETIntegration.ps1                          ← 新建（12 节集成冒烟，FAIL 0）
 ├─ SYS-Operational Technology/  ← 平台侧（本期暂缓，未改动）
 └─ ETWorkbench/                 ← ✅ 骨架已建（D1 提前完成）
-   ├─ Start-ETWorkbench.ps1     ← 唯一入口（-SelfTest / -Console）
+   ├─ Start-ETWorkbench.ps1     ← 主窗口入口（-SelfTest / -Console，含内嵌 C# ETWindowNative）
+   ├─ Start-ETPlate.ps1         ← 常驻铭牌入口（含内嵌 C# ETPlateNative / ETPlateActivate）
    ├─ Config/                   ← workstation / paths / health-rules 三份 JSON
    ├─ Modules/                  ← 8 个 .psm1，共 83 个导出函数
    ├─ Tasks/                    ← 4 个计划任务脚本
-   └─ UI/MainWindow.xaml        ← 6 页签界面（单文件，见下方偏离说明）
+   └─ UI/                       ← MainWindow.xaml（三区桌面布局）+ PlateBar.xaml（**316×248 左侧垂直居中铭牌**）
 
 已删除：
 ├─ 运维工作台/                  ← 重复目录 + 重复 git clone（168 文件 / 13.39 MB）

@@ -1,21 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <!--
-  ET 工作台 —— 屏幕左侧常驻【设备铭牌】标签（Tray Badge / Nameplate）
+  ET 工作台 —— 屏幕左侧常驻【设备铭牌】标签（Plate Bar / Nameplate）
 
-  设计：
-    · 无边框、置顶（Topmost）、不显示在任务栏、不抢焦点
-    · 停靠屏幕左侧、垂直居中、紧贴左边缘（无间隙），仅右侧圆角
-    · 版式仿工业设备铭牌：标题=设备编号；编号行 ET / IP / MPC
+  版式来源：原始 TrayBadge.xaml（V2.5 之前的设计），按用户 2026-09-29 决策原样恢复：
+    · 尺寸 316 x 248 的竖版铭牌卡（不是水平矮条）
+    · 停靠【工作区左边缘、垂直居中】、紧贴左边缘（无间隙），仅右侧圆角
+    · 版式仿工业设备铭牌：标题=设备编号；编号行 ET / IP / MPC；页脚=版本+刷新时间
     · 整高状态灯条 + 状态胶囊：一眼可见的报警标识（三态：绿=正常 / 黄=警告 / 红=报警）
     · 单击主体  -> 展开完整主窗口（Start-ETWorkbench.ps1）
-    · 右键主体  -> 菜单（打开工作台 / 退出标签…）
-    · 退出标签  -> 右键菜单 + 二次确认，避免误触直接关闭
+    · 右键主体  -> 菜单（打开工作台 / 退出铭牌…）
+    · 退出铭牌  -> 右键菜单 + 二次确认，避免误触直接关闭
+
+  ⚠ 与原始 TrayBadge.xaml 的唯一差异（红线要求，不可回退）：
+    · 原始为 Topmost="True"（置顶）——违反 §10.1 红线 F-4「强制抢焦点或置顶」。
+      此处改为 Topmost="False"，并由 Start-ETPlate.ps1 用
+      SetWindowPos(HWND_BOTTOM, SWP_NOACTIVATE) 主动【沉到最低层】。
+      沉底是置顶的反面，不违反 F-4。
+    · 不显示在任务栏 / 不参与 Alt+Tab（ShowInTaskbar=False + WS_EX_TOOLWINDOW）。
+
+  ⚠ 尺寸契约已解除：本窗口不再与 MainWindow.xaml 顶栏槽位做像素对齐。
+    主窗口顶栏的 PlateSlot 已整体移除，顶栏因此不再预留 340x88 的铭牌位。
 
   字段来源：
     设备 / ET / MPC   由本机 IP 在共享清单（mappings.json 的 ByIpAddress）中反查；
                       清单不可用时显示示例值，并在抬头标注「示例」。
     IP               本机业务网卡 IP（自动获取）。
-    标签版本          本标签（TrayBadge）自身版本号。
+    铭牌版本 / 刷新时间 本铭牌自身版本与最后一次刷新时刻。
+    规则来源          ET.Health 的告警数 + ET.Outbox 的待上报数 + 识别链结果，
+                      与主窗口底部状态灯同源（不会出现「铭牌红、窗口绿」）。
 
   本文件含中文，保存为 UTF-8 with BOM（约束 C-1）。
 -->
@@ -28,10 +40,12 @@
         Background="Transparent"
         ResizeMode="NoResize"
         ShowInTaskbar="False"
-        Topmost="True"
+        Topmost="False"
+        WindowStartupLocation="Manual"
         FontFamily="Microsoft YaHei UI, Segoe UI">
 
-  <!-- 右侧/下侧留 16px 透明区给阴影；铭牌本体紧贴左上，实现左侧无空隙 -->
+  <!-- 右侧/下侧留 16px 透明区给阴影；铭牌本体紧贴左上，实现左侧无空隙。
+       ⚠ 这 16px 只在窗口内部，不影响窗口自身 Left 定位（窗口 Left 即左边缘）。 -->
   <Border x:Name="RootBorder"
           Margin="0,0,16,16"
           CornerRadius="0,16,16,0"
@@ -43,7 +57,7 @@
       <ContextMenu>
         <MenuItem Header="打开工作台" Tag="open"/>
         <Separator/>
-        <MenuItem Header="退出标签…" Tag="exit"/>
+        <MenuItem Header="退出铭牌…" Tag="exit"/>
       </ContextMenu>
     </Border.ContextMenu>
     <Border.Background>
@@ -64,7 +78,7 @@
       </Grid.ColumnDefinitions>
 
       <!-- 整高状态灯条：三态 —— 绿=正常 / 黄=警告 / 红=报警
-           颜色不是写死的，由 Start-ETTray.ps1 的 $Script:PlateState 在 Set-ETPlateStatus 里赋值；
+           颜色不是写死的，由 Start-ETPlate.ps1 的 $Script:PlateState 在 Set-ETPlateStatus 里赋值；
            这里的 #FF2FBF71 只是加载瞬间的初始值（= 正常）。 -->
       <Border x:Name="StatusStrip" Grid.Column="0" Background="#FF2FBF71">
         <Border.Effect>
@@ -90,7 +104,8 @@
                      FontSize="12" FontWeight="SemiBold"
                      Foreground="#FF6FA8D8"
                      VerticalAlignment="Center"/>
-          <Border HorizontalAlignment="Right"
+          <Border x:Name="StatusPill"
+                  HorizontalAlignment="Right"
                   CornerRadius="9"
                   Padding="8,3"
                   Background="#1AFFFFFF"
@@ -159,9 +174,9 @@
                      TextTrimming="CharacterEllipsis"/>
         </Grid>
 
-        <!-- 页脚：标签自身版本 + 刷新时间 -->
+        <!-- 页脚：铭牌自身版本 + 刷新时间 -->
         <Grid Grid.Row="4" Margin="0,8,0,0" VerticalAlignment="Bottom">
-          <TextBlock x:Name="TxtBadgeVer" Text="标签 v1.0.0" FontSize="10.5" Foreground="#FF5E86AE"/>
+          <TextBlock x:Name="TxtBadgeVer" Text="铭牌 v1.1.0" FontSize="10.5" Foreground="#FF5E86AE"/>
           <TextBlock x:Name="TxtUpdated" Text="—" FontSize="10.5" Foreground="#FF5E86AE" HorizontalAlignment="Right"/>
         </Grid>
       </Grid>
