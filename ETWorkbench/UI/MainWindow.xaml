@@ -17,7 +17,7 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="Microsoft YaHei UI, Segoe UI"
         FontSize="13"
-        Background="#FFF6F7F9">
+        Background="#FFE8EDF3">
 
   <Window.Resources>
     <Style TargetType="Button">
@@ -28,6 +28,31 @@
       <Setter Property="Foreground" Value="White"/>
       <Setter Property="BorderThickness" Value="0"/>
       <Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Bd"
+                    Background="{TemplateBinding Background}"
+                    CornerRadius="8"
+                    Padding="{TemplateBinding Padding}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#FF3D7FC4"/>
+              </Trigger>
+              <Trigger Property="IsPressed" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#FF25598F"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Bd" Property="Opacity" Value="0.5"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
     </Style>
     <Style TargetType="TextBlock" x:Key="Label">
       <Setter Property="Margin" Value="0,0,0,4"/>
@@ -46,6 +71,57 @@
       <Setter Property="Padding" Value="10"/>
       <Setter Property="BorderThickness" Value="0"/>
     </Style>
+
+    <!-- ============ 卡片样式（内容卡片化） ============ -->
+    <Style TargetType="Border" x:Key="Card">
+      <Setter Property="Background" Value="White"/>
+      <Setter Property="CornerRadius" Value="10"/>
+      <Setter Property="BorderBrush" Value="#FFD9E1EA"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="18"/>
+      <Setter Property="Margin" Value="14"/>
+      <Setter Property="Effect">
+        <Setter.Value>
+          <DropShadowEffect BlurRadius="12" ShadowDepth="2" Direction="270" Opacity="0.16" Color="#FF000000"/>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <!-- ============ 导航标签卡片化（胶囊式 Tab） ============ -->
+    <Style TargetType="TabItem">
+      <Setter Property="Foreground" Value="#FF44505F"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TabItem">
+            <Border x:Name="Bd"
+                    Background="#FFE9EEF5"
+                    BorderBrush="#FFD9E1EA"
+                    BorderThickness="1"
+                    CornerRadius="9"
+                    Padding="20,10"
+                    Margin="0,0,10,0"
+                    Cursor="Hand">
+              <ContentPresenter x:Name="ContentSite"
+                                ContentSource="Header"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                RecognizesAccessKey="True"
+                                TextElement.FontWeight="SemiBold"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#FFDFE7F1"/>
+              </Trigger>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Bd" Property="Background" Value="#FF2F6FB5"/>
+                <Setter TargetName="Bd" Property="BorderBrush" Value="#FF2F6FB5"/>
+                <Setter TargetName="ContentSite" Property="TextElement.Foreground" Value="White"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
   </Window.Resources>
 
   <Grid>
@@ -56,22 +132,48 @@
     </Grid.RowDefinitions>
 
     <!-- ============================ 标题栏 ============================ -->
-    <Border Grid.Row="0" Background="#FF1B3A5C" Padding="16,12">
-      <StackPanel>
-        <TextBlock x:Name="TxtTitle"
-                   Text="ET 工作台"
-                   Foreground="White" FontSize="19" FontWeight="Bold"/>
-        <TextBlock Text="现场终端数字化运维 · ET 端（离线可用，不开放端口）"
-                   Foreground="#FFB9CBE0" FontSize="12" Margin="0,4,0,0"/>
-      </StackPanel>
+    <Border Grid.Row="0" Padding="18,14">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+          <GradientStop Color="#FF1B3A5C" Offset="0"/>
+          <GradientStop Color="#FF2F6FB5" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- logo 方块 -->
+        <Border Grid.Column="0"
+                Width="44" Height="44"
+                CornerRadius="10"
+                Background="#33FFFFFF"
+                Margin="0,0,14,0">
+          <TextBlock Text="ET"
+                     Foreground="White"
+                     FontSize="18" FontWeight="Bold"
+                     HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+          <TextBlock x:Name="TxtTitle"
+                     Text="ET 工作台"
+                     Foreground="White" FontSize="20" FontWeight="Bold"/>
+          <TextBlock Text="现场终端数字化运维 · ET 端（离线可用，不开放端口）"
+                     Foreground="#FFB9CBE0" FontSize="12" Margin="0,4,0,0"/>
+        </StackPanel>
+      </Grid>
     </Border>
 
     <!-- ============================ 主体 ============================ -->
-    <TabControl Grid.Row="1" Margin="12" Background="Transparent" BorderThickness="0">
+    <TabControl x:Name="MainTabs" Grid.Row="1" Margin="12" Background="Transparent" BorderThickness="0">
 
       <!-- ============ 页签 1：我是谁 / 该装什么（E-02） ============ -->
       <TabItem Header="我是谁">
-        <Grid Margin="14">
+        <Border Style="{StaticResource Card}">
+        <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -94,11 +196,13 @@
             <TextBox Grid.Row="1" x:Name="TxtIdentityOut" Style="{StaticResource Output}"/>
           </Grid>
         </Grid>
+        </Border>
       </TabItem>
 
       <!-- ============ 页签 2：软件入口与状态（E-03） ============ -->
       <TabItem Header="软件状态">
-        <Grid Margin="14">
+        <Border Style="{StaticResource Card}">
+        <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -110,22 +214,19 @@
           <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <Button x:Name="BtnRefreshSoft" Content="刷新状态"/>
           </StackPanel>
-          <DataGrid Grid.Row="2" x:Name="DgSoftware"
-                    AutoGenerateColumns="True"
-                    IsReadOnly="True"
-                    HeadersVisibility="Column"
-                    GridLinesVisibility="Horizontal"
-                    RowHeaderWidth="0"
-                    Background="White"
-                    BorderBrush="#FFD5DCE5"/>
+          <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <WrapPanel x:Name="SoftCardPanel"/>
+          </ScrollViewer>
           <TextBlock Grid.Row="3" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="#FF6B7787"
                      Text="「已下载」表示文件已就位但尚未安装/未确认生效。本工具不会自动安装、不会结束或重启业务软件。"/>
         </Grid>
+        </Border>
       </TabItem>
 
       <!-- ============ 页签 3：一键下载（E-04） ============ -->
       <TabItem Header="一键下载">
-        <Grid Margin="14">
+        <Border Style="{StaticResource Card}">
+        <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -149,11 +250,13 @@
 
           <TextBox Grid.Row="2" x:Name="TxtDownloadOut" Style="{StaticResource Output}"/>
         </Grid>
+        </Border>
       </TabItem>
 
       <!-- ============ 页签 4：健康检测（E-05） ============ -->
       <TabItem Header="健康检测">
-        <Grid Margin="14">
+        <Border Style="{StaticResource Card}">
+        <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -180,11 +283,13 @@
           <TextBox Grid.Row="3" x:Name="TxtHealthOut" Style="{StaticResource Output}"
                    Height="140" Margin="0,10,0,0"/>
         </Grid>
+        </Border>
       </TabItem>
 
       <!-- ============ 页签 5：主数据（E-01） ============ -->
       <TabItem Header="主数据">
-        <Grid Margin="14">
+        <Border Style="{StaticResource Card}">
+        <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -212,11 +317,13 @@
           <TextBlock Grid.Row="4" TextWrapping="Wrap" Margin="0,8,0,0" Foreground="#FF6B7787"
                      Text="校验项：JSON 合法性、主键唯一、外键引用（设备→设备编号）、版本号格式，并检测全角逗号/全角引号等常见录入错误。"/>
         </Grid>
+        </Border>
       </TabItem>
 
       <!-- ============ 页签 6：关于与自更新（E-06） ============ -->
       <TabItem Header="关于">
-        <Grid Margin="14">
+        <Border Style="{StaticResource Card}">
+        <Grid>
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -235,26 +342,29 @@
           <TextBox Grid.Row="3" x:Name="TxtAbout" Style="{StaticResource Output}"
                    Height="200" Margin="0,10,0,0"/>
         </Grid>
+        </Border>
       </TabItem>
 
     </TabControl>
 
     <!-- ============================ 状态条 ============================ -->
-    <Border Grid.Row="2" Background="#FFE7ECF2" BorderBrush="#FFD5DCE5" BorderThickness="0,1,0,0" Padding="16,7">
+    <Border Grid.Row="2" Background="#FFE7ECF2" BorderBrush="#FFD5DCE5" BorderThickness="0,1,0,0" Padding="16,8">
       <Grid>
         <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="*"/>
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="Auto"/>
           <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
-        <TextBlock Grid.Column="0" x:Name="TxtStatus"
+        <Ellipse Grid.Column="0" x:Name="StatusBarDot" Width="10" Height="10" Fill="#FF2FBF71" VerticalAlignment="Center" Margin="0,0,8,0"/>
+        <TextBlock Grid.Column="1" x:Name="TxtStatus"
                    Text="就绪"
                    Foreground="#FF44505F"
                    VerticalAlignment="Center"/>
-        <TextBlock Grid.Column="1" x:Name="TxtIdentity" Text="设备：未识别" Margin="16,0,16,0" Foreground="#FF44505F"/>
-        <TextBlock Grid.Column="2" x:Name="TxtShare" Text="共享：未检查" Margin="0,0,16,0" Foreground="#FF44505F"/>
-        <TextBlock Grid.Column="3" x:Name="TxtVersion" Text="版本：未知" Foreground="#FF44505F"/>
+        <TextBlock Grid.Column="2" x:Name="TxtIdentity" Text="设备：未识别" Margin="16,0,16,0" Foreground="#FF44505F" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="3" x:Name="TxtShare" Text="共享：未检查" Margin="0,0,16,0" Foreground="#FF44505F" VerticalAlignment="Center"/>
+        <TextBlock Grid.Column="4" x:Name="TxtVersion" Text="版本：未知" Foreground="#FF44505F" VerticalAlignment="Center"/>
       </Grid>
     </Border>
   </Grid>

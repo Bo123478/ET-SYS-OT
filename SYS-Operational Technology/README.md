@@ -11,6 +11,7 @@ BJ 工厂现场设备与系统运维数字化平台。本仓库承载 **Phase 1�
 | [`docs/data-dictionary.md`](docs/data-dictionary.md) | 数据字典：表/列定义、选项集、KPI 口径、保留与脱敏规则 |
 | [`docs/rbac-matrix.md`](docs/rbac-matrix.md) | 权限矩阵：角色 × 表 × 操作，含列级安全与审计配置 |
 | [`docs/intake-forms.md`](docs/intake-forms.md) | 问题入口设计：Forms 字段映射、Canvas App 规划、技术债登记 |
+| [`docs/AI-Agent接入方案.md`](docs/AI-Agent接入方案.md) | AI-Agent 平台接入方案：日志分析、图片识别、知识检索、建议输出与审批治理 |
 | [`docs/alm-runbook.md`](docs/alm-runbook.md) | ALM 操作手册：环境、服务主体、导入后必做项、发布与回滚 |
 | [`docs/uat-phase1.md`](docs/uat-phase1.md) | Phase 1 验收记录表：MVP 十一条标准逐条留证 |
 

@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+  ET 工作台 —— 屏幕左侧常驻【设备铭牌】标签（Tray Badge / Nameplate）
+
+  设计：
+    · 无边框、置顶（Topmost）、不显示在任务栏、不抢焦点
+    · 停靠屏幕左侧、垂直居中、紧贴左边缘（无间隙），仅右侧圆角
+    · 版式仿工业设备铭牌：标题=设备编号；编号行 ET / IP / MPC
+    · 整高状态灯条 + 状态胶囊：一眼可见的报警标识（三态：绿=正常 / 黄=警告 / 红=报警）
+    · 单击主体  -> 展开完整主窗口（Start-ETWorkbench.ps1）
+    · 右键主体  -> 菜单（打开工作台 / 退出标签…）
+    · 退出标签  -> 右键菜单 + 二次确认，避免误触直接关闭
+
+  字段来源：
+    设备 / ET / MPC   由本机 IP 在共享清单（mappings.json 的 ByIpAddress）中反查；
+                      清单不可用时显示示例值，并在抬头标注「示例」。
+    IP               本机业务网卡 IP（自动获取）。
+    标签版本          本标签（TrayBadge）自身版本号。
+
+  本文件含中文，保存为 UTF-8 with BOM（约束 C-1）。
+-->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ET 设备铭牌"
+        Width="316" Height="248"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Topmost="True"
+        FontFamily="Microsoft YaHei UI, Segoe UI">
+
+  <!-- 右侧/下侧留 16px 透明区给阴影；铭牌本体紧贴左上，实现左侧无空隙 -->
+  <Border x:Name="RootBorder"
+          Margin="0,0,16,16"
+          CornerRadius="0,16,16,0"
+          BorderBrush="#553FA9E0"
+          BorderThickness="0,1,1,1"
+          Cursor="Hand"
+          ToolTip="单击展开工作台 · 右键更多操作">
+    <Border.ContextMenu>
+      <ContextMenu>
+        <MenuItem Header="打开工作台" Tag="open"/>
+        <Separator/>
+        <MenuItem Header="退出标签…" Tag="exit"/>
+      </ContextMenu>
+    </Border.ContextMenu>
+    <Border.Background>
+      <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FF17395F" Offset="0"/>
+        <GradientStop Color="#FF0D2338" Offset="0.55"/>
+        <GradientStop Color="#FF08182A" Offset="1"/>
+      </LinearGradientBrush>
+    </Border.Background>
+    <Border.Effect>
+      <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="315" Opacity="0.45" Color="#FF000000"/>
+    </Border.Effect>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="6"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- 整高状态灯条：三态 —— 绿=正常 / 黄=警告 / 红=报警
+           颜色不是写死的，由 Start-ETTray.ps1 的 $Script:PlateState 在 Set-ETPlateStatus 里赋值；
+           这里的 #FF2FBF71 只是加载瞬间的初始值（= 正常）。 -->
+      <Border x:Name="StatusStrip" Grid.Column="0" Background="#FF2FBF71">
+        <Border.Effect>
+          <DropShadowEffect BlurRadius="12" ShadowDepth="0" Direction="0" Opacity="0.9" Color="#FF2FBF71"/>
+        </Border.Effect>
+      </Border>
+
+      <Grid x:Name="ContentGrid" Grid.Column="1" Margin="14,12,14,12">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <!-- 编号行：必须 Auto（内容自适应）。旧版用 * 会导致内容溢出、被页脚盖住 MPC -->
+          <RowDefinition Height="Auto"/>
+          <!-- 页脚：吃掉剩余空间并底部对齐，永远不会压到上面的编号行 -->
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- 抬头：铭牌名 + 报警状态胶囊 -->
+        <Grid Grid.Row="0">
+          <TextBlock x:Name="TxtTitle"
+                     Text="ET 工作台"
+                     FontSize="12" FontWeight="SemiBold"
+                     Foreground="#FF6FA8D8"
+                     VerticalAlignment="Center"/>
+          <Border HorizontalAlignment="Right"
+                  CornerRadius="9"
+                  Padding="8,3"
+                  Background="#1AFFFFFF"
+                  BorderBrush="#33FFFFFF"
+                  BorderThickness="1">
+            <StackPanel Orientation="Horizontal">
+              <Ellipse x:Name="StatusDot"
+                       Width="9" Height="9"
+                       Fill="#FF2FBF71"
+                       VerticalAlignment="Center"
+                       Margin="0,0,6,0"/>
+              <TextBlock x:Name="TxtStatus"
+                         Text="正常"
+                         FontSize="11"
+                         Foreground="#FFE7F3FF"
+                         VerticalAlignment="Center"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+
+        <!-- 标题：设备编号（大字，仿铭牌刻字） -->
+        <StackPanel Grid.Row="1" Margin="0,12,0,0">
+          <TextBlock x:Name="TxtEquip"
+                     Text="—"
+                     FontFamily="Consolas"
+                     FontSize="34" FontWeight="Bold"
+                     Foreground="White"
+                     TextTrimming="CharacterEllipsis"/>
+          <TextBlock Text="设 备 编 号"
+                     FontSize="10"
+                     Foreground="#FF5E86AE"
+                     Margin="2,2,0,0"/>
+        </StackPanel>
+
+        <!-- 分隔线 -->
+        <Border Grid.Row="2" Height="1" Background="#2E4C74" Margin="0,9,0,0"/>
+
+        <!-- 编号行：ET / IP / MPC -->
+        <Grid Grid.Row="3" Margin="0,9,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="48"/>
+            <ColumnDefinition Width="*"/>
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
+
+          <TextBlock Grid.Row="0" Grid.Column="0" Text="ET"
+                     FontFamily="Consolas" FontSize="13" FontWeight="Bold" Foreground="#FF6FA8D8"/>
+          <TextBlock x:Name="TxtEt" Grid.Row="0" Grid.Column="1" Text="—"
+                     FontFamily="Consolas" FontSize="14" FontWeight="Bold" Foreground="White"
+                     TextTrimming="CharacterEllipsis"/>
+
+          <TextBlock Grid.Row="1" Grid.Column="0" Text="IP"
+                     FontFamily="Consolas" FontSize="13" FontWeight="Bold" Foreground="#FF6FA8D8" Margin="0,6,0,0"/>
+          <TextBlock x:Name="TxtIp" Grid.Row="1" Grid.Column="1" Text="—"
+                     FontFamily="Consolas" FontSize="14" Foreground="#FFDCEBFA" Margin="0,6,0,0"
+                     TextTrimming="CharacterEllipsis"/>
+
+          <TextBlock Grid.Row="2" Grid.Column="0" Text="MPC"
+                     FontFamily="Consolas" FontSize="13" FontWeight="Bold" Foreground="#FF6FA8D8" Margin="0,6,0,0"/>
+          <TextBlock x:Name="TxtMpc" Grid.Row="2" Grid.Column="1" Text="—"
+                     FontFamily="Consolas" FontSize="14" FontWeight="Bold" Foreground="White" Margin="0,6,0,0"
+                     TextTrimming="CharacterEllipsis"/>
+        </Grid>
+
+        <!-- 页脚：标签自身版本 + 刷新时间 -->
+        <Grid Grid.Row="4" Margin="0,8,0,0" VerticalAlignment="Bottom">
+          <TextBlock x:Name="TxtBadgeVer" Text="标签 v1.0.0" FontSize="10.5" Foreground="#FF5E86AE"/>
+          <TextBlock x:Name="TxtUpdated" Text="—" FontSize="10.5" Foreground="#FF5E86AE" HorizontalAlignment="Right"/>
+        </Grid>
+      </Grid>
+    </Grid>
+  </Border>
+</Window>

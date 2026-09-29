@@ -127,6 +127,7 @@ function Get-UiElement {
 
 # ================================================================ 7. 控件引用
 $ui = @{
+    MainTabs        = Get-UiElement 'MainTabs'
     TxtTitle        = Get-UiElement 'TxtTitle'
     TxtStatus       = Get-UiElement 'TxtStatus'
     TxtIdentity     = Get-UiElement 'TxtIdentity'
@@ -137,7 +138,7 @@ $ui = @{
     TxtIdentityOut  = Get-UiElement 'TxtIdentityOut'
 
     BtnRefreshSoft  = Get-UiElement 'BtnRefreshSoft'
-    DgSoftware      = Get-UiElement 'DgSoftware'
+    SoftCardPanel   = Get-UiElement 'SoftCardPanel'
 
     CmbApplication  = Get-UiElement 'CmbApplication'
     CmbVersion      = Get-UiElement 'CmbVersion'
@@ -215,22 +216,253 @@ if ($ui.BtnIdentify) {
 }
 
 # ================================================================ 10. 页签二：软件状态（E-03）
+function ConvertTo-ETBrush {
+    <# .SYNOPSIS 字符串颜色 -> WPF Brush。失败返回 $null。 #>
+    param([string]$Color)
+    try {
+        $conv = New-Object System.Windows.Media.BrushConverter
+        return $conv.ConvertFromString($Color)
+    }
+    catch { return $null }
+}
+
+function Get-ETStateColor {
+    <# .SYNOPSIS 七态 -> 徽章颜色（StateOrder 0..7）。 #>
+    param([AllowNull()]$StateOrder)
+    switch ([int]$StateOrder) {
+        0 { return '#FFE5533D' }   # 共享无包 —— 红
+        1 { return '#FF8A94A6' }   # 共享有包 —— 灰
+        2 { return '#FFF08A3C' }   # 已下载   —— 橙
+        3 { return '#FF2F6FB5' }   # 已部署   —— 蓝
+        4 { return '#FF12A5B8' }   # 有可执行 —— 青
+        5 { return '#FF2FA84F' }   # 运行中   —— 绿
+        6 { return '#FF7A4DB8' }   # 已配置   —— 紫
+        7 { return '#FF1E8A3C' }   # 已生效   —— 深绿
+        default { return '#FF8A94A6' }
+    }
+}
+
+function New-SoftwareCard {
+    <#
+      .SYNOPSIS  为单个应用生成一张卡片（图标 + 状态徽章 / 名称 / 版本 / 编号 / 描述 / 详情+更新）。
+      .PARAMETER Row            Get-ETSoftwareStateSummary 的单行
+      .PARAMETER Description   应用描述（来自主数据 applications.Note）
+      .NOTES
+        - 按钮用 Tag 携带 ApplicationId（标识符，约束 C-3），handler 从 $sender.Tag 读取，
+          避免 PowerShell 闭包捕获循环变量导致所有按钮指向最后一个应用。
+    #>
+    param($Row, [AllowNull()][string]$Description)
+
+    $appId = "$($Row.ApplicationId)"
+    $appName = "$($Row.ApplicationName)"
+    if ([string]::IsNullOrWhiteSpace($appName)) { $appName = if ($appId) { $appId } else { '未知应用' } }
+    $ver = if ($Row.ApprovedVersion) { "$($Row.ApprovedVersion)" } else { '—' }
+    $stateLabel = if ($Row.StateLabel) { "$($Row.StateLabel)" } else { '未知' }
+    $stateColor = Get-ETStateColor -StateOrder $Row.StateOrder
+    $initial = $appName.Substring(0, 1).ToUpper()
+    $desc = if ([string]::IsNullOrWhiteSpace($Description)) { '暂无描述' } else { $Description }
+
+    # ---- 卡片容器（圆角白卡 + 阴影） ----
+    $card = New-Object System.Windows.Controls.Border
+    $card.Width = 320
+    $card.Margin = New-Object System.Windows.Thickness 8
+    $card.Padding = New-Object System.Windows.Thickness 16
+    $card.CornerRadius = New-Object System.Windows.CornerRadius 10
+    $card.BorderThickness = New-Object System.Windows.Thickness 1
+    $card.Background = ConvertTo-ETBrush '#FFFFFFFF'
+    $card.BorderBrush = ConvertTo-ETBrush '#FFD9E1EA'
+    $card.Effect = New-Object System.Windows.Media.Effects.DropShadowEffect
+
+    $sp = New-Object System.Windows.Controls.StackPanel
+
+    # ---- 顶部：图标 + 状态徽章 ----
+    $top = New-Object System.Windows.Controls.Grid
+    $col0 = New-Object System.Windows.Controls.ColumnDefinition
+    $col0.Width = [System.Windows.GridLength]::Auto
+    $col1 = New-Object System.Windows.Controls.ColumnDefinition
+    $col1.Width = New-Object System.Windows.GridLength -ArgumentList 1.0, ([System.Windows.GridUnitType]::Star)
+    $top.ColumnDefinitions.Add($col0) | Out-Null
+    $top.ColumnDefinitions.Add($col1) | Out-Null
+
+    $iconBorder = New-Object System.Windows.Controls.Border
+    $iconBorder.Width = 40
+    $iconBorder.Height = 40
+    $iconBorder.CornerRadius = New-Object System.Windows.CornerRadius 20
+    $iconBorder.Background = ConvertTo-ETBrush '#FF2F6FB5'
+    $iconText = New-Object System.Windows.Controls.TextBlock
+    $iconText.Text = $initial
+    $iconText.Foreground = ConvertTo-ETBrush '#FFFFFFFF'
+    $iconText.FontSize = 18
+    $iconText.FontWeight = 'Bold'
+    $iconText.HorizontalAlignment = 'Center'
+    $iconText.VerticalAlignment = 'Center'
+    $iconBorder.Child = $iconText
+    [System.Windows.Controls.Grid]::SetColumn($iconBorder, 0)
+    [void]$top.Children.Add($iconBorder)
+
+    $badge = New-Object System.Windows.Controls.Border
+    $badge.CornerRadius = New-Object System.Windows.CornerRadius 11
+    $badge.Padding = New-Object System.Windows.Thickness 10, 3, 10, 3
+    $badge.Background = ConvertTo-ETBrush $stateColor
+    $badge.HorizontalAlignment = 'Right'
+    $badge.VerticalAlignment = 'Top'
+    $badgeText = New-Object System.Windows.Controls.TextBlock
+    $badgeText.Text = $stateLabel
+    $badgeText.Foreground = ConvertTo-ETBrush '#FFFFFFFF'
+    $badgeText.FontSize = 11
+    $badgeText.FontWeight = 'SemiBold'
+    $badge.Child = $badgeText
+    [System.Windows.Controls.Grid]::SetColumn($badge, 1)
+    [void]$top.Children.Add($badge)
+
+    [void]$sp.Children.Add($top)
+
+    # ---- 名称 ----
+    $tName = New-Object System.Windows.Controls.TextBlock
+    $tName.Text = $appName
+    $tName.FontSize = 16
+    $tName.FontWeight = 'Bold'
+    $tName.Foreground = ConvertTo-ETBrush '#FF1B2B3A'
+    $tName.Margin = New-Object System.Windows.Thickness 0, 12, 0, 0
+    $tName.TextWrapping = 'Wrap'
+    [void]$sp.Children.Add($tName)
+
+    # ---- 版本 / 编号 / 描述 ----
+    $tVer = New-Object System.Windows.Controls.TextBlock
+    $tVer.Text = "版本：$ver"
+    $tVer.FontSize = 12
+    $tVer.Foreground = ConvertTo-ETBrush '#FF6B7787'
+    $tVer.Margin = New-Object System.Windows.Thickness 0, 8, 0, 0
+    [void]$sp.Children.Add($tVer)
+
+    $tId = New-Object System.Windows.Controls.TextBlock
+    $tId.Text = "应用编号：$appId"
+    $tId.FontSize = 12
+    $tId.Foreground = ConvertTo-ETBrush '#FF6B7787'
+    $tId.Margin = New-Object System.Windows.Thickness 0, 4, 0, 0
+    [void]$sp.Children.Add($tId)
+
+    $tDesc = New-Object System.Windows.Controls.TextBlock
+    $tDesc.Text = "应用描述：$desc"
+    $tDesc.FontSize = 12
+    $tDesc.Foreground = ConvertTo-ETBrush '#FF6B7787'
+    $tDesc.Margin = New-Object System.Windows.Thickness 0, 4, 0, 0
+    $tDesc.TextWrapping = 'Wrap'
+    $tDesc.MaxHeight = 34
+    [void]$sp.Children.Add($tDesc)
+
+    # ---- 底部按钮：详情 / 更新 ----
+    $btnRow = New-Object System.Windows.Controls.StackPanel
+    $btnRow.Orientation = 'Horizontal'
+    $btnRow.Margin = New-Object System.Windows.Thickness 0, 14, 0, 0
+
+    $btnDetail = New-Object System.Windows.Controls.Button
+    $btnDetail.Content = '详情'
+    $btnDetail.Width = 80
+    $btnDetail.Height = 30
+    $btnDetail.MinWidth = 0
+    $btnDetail.Padding = New-Object System.Windows.Thickness 0
+    $btnDetail.Margin = New-Object System.Windows.Thickness 0, 0, 10, 0
+    $btnDetail.Background = ConvertTo-ETBrush '#FFFFFFFF'
+    $btnDetail.Foreground = ConvertTo-ETBrush '#FF2F6FB5'
+    $btnDetail.BorderBrush = ConvertTo-ETBrush '#FF2F6FB5'
+    $btnDetail.BorderThickness = New-Object System.Windows.Thickness 1
+    $btnDetail.Cursor = 'Hand'
+    $btnDetail.Tag = $appId
+    $btnDetail.Add_Click({
+            param($sender, $e)
+            $aid = $sender.Tag
+            try {
+                $sum = Get-ETSoftwareStateSummary
+                $row = @($sum.Rows | Where-Object { "$($_.ApplicationId)" -eq "$aid" } | Select-Object -First 1)
+                if ($row) {
+                    $sb = New-Object System.Text.StringBuilder
+                    [void]$sb.AppendLine("应用名称：$($row.ApplicationName)")
+                    [void]$sb.AppendLine("应用编号：$($row.ApplicationId)")
+                    [void]$sb.AppendLine("应装版本：$(if ($row.ApprovedVersion) { $row.ApprovedVersion } else { '—' })")
+                    [void]$sb.AppendLine("本机版本：$(if ($row.LocalVersion) { $row.LocalVersion } else { '未检测到' })")
+                    [void]$sb.AppendLine("当前状态：$(if ($row.StateLabel) { $row.StateLabel } else { '未知' })")
+                    [void]$sb.AppendLine('')
+                    [void]$sb.AppendLine('证据：')
+                    if ($row.Evidence) {
+                        foreach ($k in $row.Evidence.Keys) {
+                            $v = $row.Evidence[$k]
+                            if ($v -is [array]) { $v = ($v -join ', ') }
+                            [void]$sb.AppendLine("  ${k} = $v")
+                        }
+                    }
+                    [void][System.Windows.MessageBox]::Show($sb.ToString(), $row.ApplicationName, 'OK', 'Information')
+                }
+            }
+            catch { }
+        })
+
+    $btnUpdate = New-Object System.Windows.Controls.Button
+    $btnUpdate.Content = '更新'
+    $btnUpdate.Width = 80
+    $btnUpdate.Height = 30
+    $btnUpdate.MinWidth = 0
+    $btnUpdate.Padding = New-Object System.Windows.Thickness 0
+    $btnUpdate.Margin = New-Object System.Windows.Thickness 0
+    $btnUpdate.Background = ConvertTo-ETBrush '#FF2F6FB5'
+    $btnUpdate.Foreground = ConvertTo-ETBrush '#FFFFFFFF'
+    $btnUpdate.BorderThickness = New-Object System.Windows.Thickness 0
+    $btnUpdate.Cursor = 'Hand'
+    $btnUpdate.Tag = $appId
+    $btnUpdate.Add_Click({
+            param($sender, $e)
+            $aid = $sender.Tag
+            try {
+                Update-DownloadTargets
+                if ($ui.MainTabs) { $ui.MainTabs.SelectedIndex = 2 }
+                if ($ui.CmbApplication) { $ui.CmbApplication.SelectedItem = $aid }
+            }
+            catch { }
+        })
+
+    [void]$btnRow.Children.Add($btnDetail)
+    [void]$btnRow.Children.Add($btnUpdate)
+    [void]$sp.Children.Add($btnRow)
+
+    $card.Child = $sp
+    return $card
+}
+
 function Update-SoftwareGrid {
     try {
         $sum = Get-ETSoftwareStateSummary
-        $rows = @($sum.Rows | ForEach-Object {
-                [pscustomobject]@{
-                    ApplicationId = $_.ApplicationId
-                    ApplicationName = $_.ApplicationName
-                    ApprovedVersion = $_.ApprovedVersion
-                    StateOrder      = $_.StateOrder
-                    StateLabel      = $_.StateLabel
-                    State           = $_.State
+
+        # 应用描述映射（主数据 applications.Note）
+        $descMap = @{}
+        try {
+            foreach ($a in @(Get-ETMasterDataSnapshot -Kind 'applications')) {
+                if ($null -eq $a) { continue }
+                try {
+                    $descMap["$($a.ApplicationId)"] = "$($a.Note)"
                 }
-            })
-        if ($ui.DgSoftware) {
-            $ui.DgSoftware.AutoGenerateColumns = $true
-            $ui.DgSoftware.ItemsSource = $rows
+                catch { }
+            }
+        }
+        catch { }
+
+        $panel = $ui.SoftCardPanel
+        if (-not $panel) { return }
+        $panel.Children.Clear()
+
+        $cards = @($sum.Rows | Where-Object { $null -ne $_ })
+        if ($cards.Count -eq 0) {
+            $empty = New-Object System.Windows.Controls.TextBlock
+            $empty.Text = '暂无应用主数据。请先在「主数据」页签拉取最新快照。'
+            $empty.Foreground = ConvertTo-ETBrush '#FF6B7787'
+            $empty.Margin = New-Object System.Windows.Thickness 8
+            [void]$panel.Children.Add($empty)
+            return
+        }
+
+        foreach ($r in $cards) {
+            $desc = if ($descMap.ContainsKey("$($r.ApplicationId)")) { $descMap["$($r.ApplicationId)"] } else { '' }
+            $card = New-SoftwareCard -Row $r -Description $desc
+            if ($card) { [void]$panel.Children.Add($card) }
         }
     }
     catch { Write-Boot ("读取软件状态失败：{0}" -f $_.Exception.Message) 'Warn' }
