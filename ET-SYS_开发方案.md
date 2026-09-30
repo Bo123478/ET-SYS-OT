@@ -2,8 +2,10 @@
 
 > **版本** V2.0 · **日期** 2026-09-28 · **状态** 已锁定，可开工
 >
-> **本版定位**：从「全平台 6 工作流 60 人日」**收缩为「ET 端 PowerShell 工作台单工作流」**。>   
-> 原因是**人力与工期不足，原方案过重**。平台侧（Dataverse / Power Automate / Databricks / Power BI）**本期暂缓**，>   
+> **本版定位**：从「全平台 6 工作流 60 人日」**收缩为「ET 端 PowerShell 工作台单工作流」**。
+>   
+> 原因是**人力与工期不足，原方案过重**。平台侧（Dataverse / Power Automate / Databricks / Power BI）**本期暂缓**，
+>   
 > 但所有设计为其**预留接口**，未来可零改造接入。
 
 | 项目   | 内容                                 |
@@ -52,7 +54,8 @@
 | WS-E | Power BI 报表与 DAX          | 8 人日  |
 | WS-F | 发布 / 迁移 / 运维              | 6 人日  |
 
-**问题**：人力与工期只有 **2 人 × 20 个工作日**，**不足原方案的 2/3**。全平台并行会导致  
+**问题**：人力与工期只有 **2 人 × 20 个工作日**，**不足原方案的 2/3**。全平台并行会导致
+  
 每一条链路都做不完，最终交付为零。
 
 ### 1.2 本版策略
@@ -71,7 +74,8 @@
 **理由**：
 
 1. **ET 端是价值起点**：没有 ET 端采集数据，平台侧无数据可加工，报表是空的。
-2. **ET 端可独立交付**：它只依赖共享目录，不依赖 Dataverse 授权、Power Platform 许可、Databricks 通道。     
+2. **ET 端可独立交付**：它只依赖共享目录，不依赖 Dataverse 授权、Power Platform 许可、Databricks 通道。
+     
    这恰好绕开了 **IT 清单中大量「待确认」的平台侧授权**（IT-14 ~ IT-28）。
 3. **ET 端最贴近现场痛点**：找软件、下载、看状态、查健康——这是运维每天在做的事。
 
@@ -86,7 +90,8 @@
 | Teams 通知          | **不做**                           | 事件文件已含 `IssueId`/`EventId`，可直接驱动流程     |
 | 审批流               | **人工审批版本并手工放入 `Release/`**       | 未来接入 Approvals                         |
 
-> **关键设计**：本期**所有落盘格式都按平台侧可直读设计**（NDJSON、分区目录、One Event = One File、>   
+> **关键设计**：本期**所有落盘格式都按平台侧可直读设计**（NDJSON、分区目录、One Event = One File、
+>   
 > 统一主键）。未来接平台时，**只增加一个 ingestion 作业，ET 端一行代码不改**。
 
 ---
@@ -105,6 +110,12 @@
 | **E-06** | 工作台自更新    | 自身版本可升级、可回滚                           | A-08           |
 | **E-07** | GUI 界面    | XAML 主界面 + 5 个页签                      | A-10           |
 
+> **E-07 实现注记（2026-09-29）**：5 个页签已落地并实测可用
+> （**0 信息区 / 1 应用区 / 2 警告提示 / 3 功能设置 / 4 主数据**，启动默认停在**信息区**）。
+> **页签顺序是契约**：脚本已不再按数字索引导航，改为按**页签标题**寻址
+> （`Select-ETTab` + `$script:TabIndex`），因此重排页签只需同步这张表与 `MainWindow.xaml`，
+> 见 `ET-项目待办事项.md` §3.7 `G-07`。详见 `ET-SYS_开发进度.md` §1 V3.0。
+
 ### 2.2 不做（明确排除，避免范围蔓延）
 
 | 排除项                       | 原编号  | 排除理由                                            |
@@ -122,7 +133,8 @@
 
 ### 2.3 范围守则
 
-> 任何新增需求，**必须先砍掉等量的 E-xx 工作量**，否则工期必然失控。>   
+> 任何新增需求，**必须先砍掉等量的 E-xx 工作量**，否则工期必然失控。
+>   
 > 2 人 × 20 个工作日 = **40 人日**，本方案已排满（见 §8）。
 
 ---
@@ -212,7 +224,8 @@ flowchart TB
 | 自更新确认        |   ✓ | 下载、校验、切指针、**冒烟测试** |
 | Outbox 状态查看  |   ✓ |                 补传 |
 
-> **核心原则**：GUI **绝不**处理长时间下载、共享写入和上传。>   
+> **核心原则**：GUI **绝不**处理长时间下载、共享写入和上传。
+>   
 > GUI 与后台通过 **`Commands/` → `Results/` 文件契约**（带 `RequestId`）通信。
 
 ### 4.3 识别链（权威，不可改）
@@ -231,10 +244,12 @@ SN → 业务 IP → Equipment ID → Device ID → Project ID → Application �
 | 6  | 加载应用清单、启动规则、批准版本、配置规则                        |
 | 7  | 生成**只读** Device Context                      |
 
-**不得自动授权的情况**：SN 为空或重复、IP 不匹配、设备或工程停用、主数据关联缺失、  
+**不得自动授权的情况**：SN 为空或重复、IP 不匹配、设备或工程停用、主数据关联缺失、
+  
 Snapshot 校验失败或严重过期。
 
-**降级行为**：识别失败时**保留**软件入口、健康检测、日志采集；  
+**降级行为**：识别失败时**保留**软件入口、健康检测、日志采集；
+  
 **暂停**下载、配置写入和未授权发布；**不干预**运行中的业务软件。
 
 ---
@@ -301,22 +316,28 @@ C:\ProgramData\ETWorkbench\          # 本地数据根（IT-12 已确认 ACL）
    ↑ 由 Config\workstation.json 的 SoftwareRoot 配置
 ```
 
-> **分离理由**：① 绿色包目录保持干净，便于自更新整体替换；>   
+> **分离理由**：① 绿色包目录保持干净，便于自更新整体替换；
+>   
 > ② 下载软件与程序分离，C 盘空间紧张时可放 D 盘。
 
 ### 5.4 工程目录（本仓库）
 
+> **⚠️ §5.4 现状校准（2026-09-29）**：本节是**立项时的目标目录**，与仓库现状有出入，务必按下表读：
+>
+> | 本节所述 | 实际 | 说明 |
+> |---|---|---|
+> | `UI\` 下 **7 个 `.xaml`**（`MainWindow` + `IdentityPage`/`SoftwarePage`/`DownloadPage`/`HealthPage`/`MasterDataPage`/`AboutPage`） | **只有 2 个**：`MainWindow.xaml` + `PlateBar.xaml` | 6 个功能页**不是独立 XAML**，而是 `MainWindow.xaml` 内的 **5 个 `TabItem`**（对应 `E-07`）。分层文件方案已放弃 |
+> | `Config\` 下 **3 个 `.json`** | **5 个**：另加 `settings.json`（本机开关与偏好的本地覆盖层）、`software-categories.json`（软件分类） | 新增两个文件均属 **A（WHB）独占**，**未改动** `workstation.json` 的冻结键名 |
+>
+> ⇒ **文件数口径**：`Validated/` 实扫 **20 个 `.ps1`/`.psm1` + 5 个 `.json` + 2 个 `.xaml`**（见 `tools/Test-ETScripts.ps1` 输出）。
+
 ```text
 ETWorkbench\
 ├─ Start-ETWorkbench.ps1        # 唯一入口（GUI 启动）
+├─ Start-ETPlate.ps1            # 常驻铭牌（独立进程）
 ├─ UI\
-│  ├─ MainWindow.xaml
-│  ├─ IdentityPage.xaml         # 我是谁、该装什么          → E-02
-│  ├─ SoftwarePage.xaml         # 软件入口与状态            → E-03
-│  ├─ DownloadPage.xaml         # 一键下载                  → E-04
-│  ├─ HealthPage.xaml           # 健康检测                  → E-05
-│  ├─ MasterDataPage.xaml       # 主数据录入与校验          → E-01
-│  └─ AboutPage.xaml            # 版本与自更新              → E-06
+│  ├─ MainWindow.xaml           # 主窗口（5 页签，含 E-01~E-07 全部界面）
+│  └─ PlateBar.xaml             # 常驻铭牌 316×248 竖向卡
 ├─ Modules\
 │  ├─ ET.Core.psm1              # 日志、路径、JSON 读写、原子发布
 │  ├─ ET.Identity.psm1          # 识别链                    → E-02
@@ -332,9 +353,11 @@ ETWorkbench\
 │  ├─ Publish-Outbox.ps1        # 补传                      → E-05
 │  └─ Watch-Commands.ps1        # 消费 Commands/ 命令       → E-07
 └─ Config\
-   ├─ workstation.json          # 本机配置（共享根、软件根）
+   ├─ workstation.json          # 本机配置（共享根、软件根）— 键名冻结
    ├─ health-rules.json         # 健康阈值与恢复条件
-   └─ paths.json                # 目录契约
+   ├─ paths.json                # 目录契约
+   ├─ settings.json             # 本机开关与偏好（本地覆盖层，A 独占）
+   └─ software-categories.json  # 软件分类（生产软件/系统工具/周边，A 独占）
 ```
 
 
@@ -674,6 +697,11 @@ Collect → Evaluate → Duration → Debounce → Deduplicate → Alarm → Rec
 | 8 | 全文件**存为 UTF-8 with BOM**（约束 C-1） | 中文不乱码 |
 | 9 | 打包**绿色包**结构 + 拷贝说明 | 拷贝即用 |
 
+> **⚠️ 实现注记（2026-09-29）**：第 5 步的「5 个独立 Page」**未按分层文件方式实现**，改为将 E-01~E-07 的界面全部收进 `UI/MainWindow.xaml` 的 **5 个 `TabItem`**：
+> **0 信息区**（E-02/E-01 概览，**启动默认页**，内含与铭牌逐字段一致的 316×248 卡片）· **1 应用区**（E-03/E-04，即「生产软件」）· **2 警告提示**（E-05）· **3 功能设置**（E-06 + 本机开关/偏好）· **4 主数据**（E-01）。
+> **页签顺序即契约，但寻址方式已改**：`Start-ETWorkbench.ps1` §6.5 的页签切换、键盘 `Esc` 归位、软件卡片「更新」跳转**不再写死数字索引**，统一走 `Select-ETTab '<标题>'`（映射表 `$script:TabIndex`，默认页 `$script:TabHome`）—— 重排顺序只需同步该映射表与 `MainWindow.xaml`（见 `ET-项目待办事项.md` 的 `G-07`）。
+> 第 4 步的顶部状态条已落地为**底部状态条**（身份 / 共享 / 版本 / 三态圆点），顶栏只留标题（`系统运维 · ET端`，字号 26 居中）与时钟、全屏、「关闭工作台」。
+
 **验收**：把绿色包拷到样机任意目录，双击 `Start-ETWorkbench.ps1`，
 **5 个页签全部可用，中文无乱码**。
 
@@ -711,7 +739,7 @@ Collect → Evaluate → Duration → Debounce → Deduplicate → Alarm → Rec
 | **D12** | E-05 告警 | 健康页签：阈值/告警列表 | `health-rules.json` + 7 段告警模型 | 抖动不重复告警 |
 | **D13** | E-05 上报 | 健康页签：Outbox 积压 | 事件原子落盘 + Outbox + `Publish-Outbox.ps1` | 断网落本地、恢复自动补传 |
 | **D14** | E-05 完成 | 计划任务注册界面/脚本 | `Invoke-HealthMonitor.ps1` + `Register-ETTasks.ps1` + 审计埋点 | **★ E-05 验收** |
-| **D15** | E-06 自更新 | `AboutPage.xaml` | 多版本目录 + `Current.json` + 下载校验 | 版本指针可切换 |
+| **D15** | E-06 自更新 | 「功能设置」页签的自身更新区（原计划的 `AboutPage.xaml` 已并入页签） | 多版本目录 + `Current.json` + 下载校验 | 版本指针可切换 |
 | **D16** | E-06 完成 | 检查更新 / 回滚按钮 | 冒烟测试 + 自动回滚 | **★ E-06 验收** |
 | **D17** | 集成 | `Start-ETWorkbench.ps1` + `Watch-Commands.ps1` + 统一错误提示 | 命令契约联调；异常路径梳理 | **5 页签全部可切换** |
 | **D18** | 打包 + 样机 | 绿色包结构 + 拷贝说明 + 计划任务脚本 | 样机全功能走查 | **★ 样机 6 项功能全部跑通** |

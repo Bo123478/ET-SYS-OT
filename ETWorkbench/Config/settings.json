@@ -1,0 +1,10 @@
+﻿{
+    "LogUploadEnabled":  false,
+    "AutoCheckUpdateEnabled":  false,
+    "LogLevel":  "Info",
+    "LogRetentionDays":  30,
+    "UiScale":  "Normal",
+    "StartFullScreen":  true,
+    "Note":  "工作台本地开关（本地覆盖语义）。删掉本文件即回到全部默认值，工作台照常启动。不修改 workstation.json 的冻结键名。",
+    "UpdatedAt":  "2026-09-30T13:11:01.0534129+08:00"
+}

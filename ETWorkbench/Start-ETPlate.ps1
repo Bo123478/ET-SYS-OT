@@ -86,13 +86,56 @@ try {
     $Script:Root = $PSScriptRoot
     if (-not $Script:Root) { $Script:Root = Split-Path -Parent $MyInvocation.MyCommand.Path }
 
+    # ================================================================ 1. 单实例保护：铭牌与主窗口都不能重复打开
+    # 这里使用 Global 命名空间，确保从桌面启动、重复双击 .bat、以及从主窗口再次打开时，
+    # 所有相关 PowerShell 进程都共享同一把锁，防止重复弹出多个标签/主窗口。
+    #
+    # ⚠ 这里曾经有过一个真实缺陷（本段注释存在的理由）：
+    #   被拦住的分支里调用了 [System.Windows.MessageBox]::Show(...)，
+    #   但 PresentationFramework 要到第 4 步才 Add-Type，此处的 MessageBox 会抛
+    #   「找不到类型」→ 被下面的大 catch 吞掉 → 脚本【继续往下走】→ 又开了一块铭牌。
+    #   这就是「标签启动个数限制不起作用」的真正原因。
+    #   现在：被拦住时提示放在【自己的 try/catch】里，然后【无条件 exit 0】。
+    $script:PlateMutex = $null
+    $plateIsFirstInstance = $true
+    try {
+        $plateCreatedNew = $false
+        $script:PlateMutex = New-Object System.Threading.Mutex($true, 'Global\ETWorkbench.Plate.SingleInstance', [ref]$plateCreatedNew)
+        $plateIsFirstInstance = [bool]$plateCreatedNew
+    }
+    catch {
+        # 互斥锁不可用（极少数权限受限环境）⇒ 退回进程命令行比对，仍要挡住重复打开。
+        try {
+            $plateOthers = @(Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+                Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -like '*Start-ETPlate.ps1*' })
+            if ($plateOthers.Count -gt 0) { $plateIsFirstInstance = $false }
+        }
+        catch { }
+        Write-Host ('[ET-Plate] 单实例保护降级（{0}）' -f $_.Exception.Message) -ForegroundColor Yellow
+    }
+
+    if (-not $plateIsFirstInstance) {
+        # 先输出（无头/自动化场景也能看到），再弹提示。
+        Write-Host '[ET-Plate] ET 设备铭牌已打开，不能重复打开。' -ForegroundColor Yellow
+        # 只在真实交互桌面里弹模态提示：无桌面会话里 MessageBox 会一直等点击（挂死）。
+        if ([System.Environment]::UserInteractive) {
+            try {
+                Add-Type -AssemblyName PresentationFramework -ErrorAction SilentlyContinue
+                [System.Windows.MessageBox]::Show('ET 设备铭牌已打开，不能重复打开。', 'ET 铭牌', 'OK', 'Warning') | Out-Null
+            }
+            catch { }
+        }
+        exit 0
+    }
+
     # 会话 0（无交互桌面）没有窗口可言，直接退出，别在无桌面环境里空转到超时。
+    # 注意：这段必须在【单实例检查之后】—— 否则无桌面会话连测都测不到单实例逻辑。
     if (-not [System.Environment]::UserInteractive) {
         Write-Host '[ET-Plate] 当前为会话 0（无交互桌面），无需显示铭牌，已退出。'
         exit 0
     }
 
-    # ================================================================ 1. 加载模块
+    # ================================================================ 2. 加载模块
     $ModuleDir = Join-Path $Script:Root 'Modules'
     $ModuleOrder = @(
         'ET.Core.psm1'
@@ -570,6 +613,16 @@ public static class ETPlateActivate {
 
     function Invoke-OpenMainWindow {
         try {
+            $mutex = New-Object System.Threading.Mutex($false, 'Global\ETWorkbench.MainWindow.SingleInstance')
+            $lockHeld = $mutex.WaitOne(300, $false)
+            if (-not $lockHeld) {
+                [System.Windows.MessageBox]::Show($Script:Plate, 'ET 工作台已打开，不能重复打开。', 'ET 工作台', 'OK', 'Warning') | Out-Null
+                $mutex.Dispose()
+                return
+            }
+            $mutex.ReleaseMutex()
+            $mutex.Dispose()
+
             # 若主窗口进程仍在运行，尝试激活其主窗口；否则启动新进程
             if ($script:MainProc -and -not $script:MainProc.HasExited) {
                 try {

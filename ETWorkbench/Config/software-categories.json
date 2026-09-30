@@ -1,0 +1,33 @@
+﻿{
+    "Version":  "1.0.0",
+    "Note":  "生产软件分类表：SoftwareId -\u003e 生产软件 / 系统工具 / 周边。未在表中的软件自动归入「其他」（兜底），不隐藏、不猜测。本文件由 A/WHB 独占，独立于 workstation.json 的冻结键名。",
+    "Categories":  [
+                       {
+                           "Key":  "Production",
+                           "Title":  "生产软件",
+                           "Order":  1,
+                           "Note":  "现场业务主体，直接影响生产"
+                       },
+                       {
+                           "Key":  "SystemTool",
+                           "Title":  "系统工具",
+                           "Order":  2,
+                           "Note":  "操作系统与运维工具"
+                       },
+                       {
+                           "Key":  "Peripheral",
+                           "Title":  "周边",
+                           "Order":  3,
+                           "Note":  "外设驱动与配套软件"
+                       },
+                       {
+                           "Key":  "Other",
+                           "Title":  "其他",
+                           "Order":  9,
+                           "Note":  "未在分类表中的软件（兜底）"
+                       }
+                   ],
+    "SoftwareIds":  [
+
+                    ]
+}
