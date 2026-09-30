@@ -1,4 +1,4 @@
-# Empirical end-to-end verification of the ET single-instance guards.
+﻿# Empirical end-to-end verification of the ET single-instance guards.
 # ASCII only (no BOM / no Chinese) so Windows PowerShell 5.1 never mis-decodes it.
 [CmdletBinding()]
 param(

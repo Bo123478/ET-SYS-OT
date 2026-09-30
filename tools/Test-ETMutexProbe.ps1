@@ -1,4 +1,4 @@
-# Empirical two-process test for the named mutex single-instance pattern.
+﻿# Empirical two-process test for the named mutex single-instance pattern.
 [CmdletBinding()]
 param(
     [string]$MutexName = 'Global\ETWorkbench.Plate.SingleInstance',
