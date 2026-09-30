@@ -76,6 +76,7 @@ D1 阶段 A/B 两人要同时动 6 个模块。若接口可自由漂移，B 改 
 | 2026-09-28 | v1.0.0 | 初版冻结，基线为 89 定义 / 83 导出 / 6 私有 | — | 全部 |
 | 2026-09-29 | v1.0.0 | **无接口变更**。单实例限制修复：`Start-ETWorkbench.ps1` / `Start-ETPlate.ps1` 各加一把 `Global\` 命名互斥锁并把守卫前移到 Session 0 检查之前。两者均属**未冻结面**（入口脚本，非模块导出），83 个导出函数的名称/参数/返回字段一字未动 | A | `ETWorkbench/*`（未冻结） |
 | 2026-09-29 | v1.0.0 | **无接口变更**。主窗口界面四项改动（页签重排 `0 信息区 / 1 应用区 / 2 警告提示 / 3 功能设置 / 4 主数据`、顶栏标题改 `系统运维 · ET端`、信息区内嵌铭牌卡、默认打开信息区）+ 页签寻址改为按标题（`Select-ETTab`）。`UI/MainWindow.xaml`（`x:Name` 51→66）与 `Start-ETWorkbench.ps1`（`$ui` 49→60）均属**未冻结面**，83 个导出函数未动 | A | `UI/MainWindow.xaml`、`ETWorkbench/Start-ETWorkbench.ps1`（均未冻结） |
+| 2026-09-30 | v1.0.0 | **无接口变更**。修复 `D-13`（主窗口启动即失败）：`Start-ETWorkbench.ps1:379` 注释与代码被挤到同一物理行 ⇒ `$ui` 表缺 `BtnMdLoad` 键 ⇒ `Set-StrictMode 2.0` 读缺失哈希键抛「找不到属性」⇒ 主窗口从未打开。`ETWorkbench/Start-ETWorkbench.ps1` 与 `tools/Test-ETIntegration.ps1`（§12 新增 `$ui` 声明反向门禁）均属**未冻结面**，83 个导出函数的名称/参数/返回字段一字未动 | A | `ETWorkbench/Start-ETWorkbench.ps1`、`tools/Test-ETIntegration.ps1`（均未冻结） |
 
 ---
 
@@ -935,7 +936,31 @@ $space = Test-ETFreeSpace -Path $targetDir -RequiredBytes $totalBytes
 
 严格说这不是缺陷，但**极易误用**，故在此重复：`File` 类返回**模板字符串**，不是路径。
 
-### 10.6 `C-1` 编码合规现状（**与接口无关但影响提交**）
+### 10.6 `D-13`：主窗口启动即失败「找不到属性」（**真实缺陷，已修复 2026-09-30**）
+
+**现象**：双击启动主窗口，只弹出「工作台启动失败：在此对象上找不到属性"BtnMdLoad"。请确认该属性存在。」，**窗口一次都没有打开**。
+
+**根因**：`ETWorkbench/Start-ETWorkbench.ps1` 第 379 行的物理行把**注释与代码挤在了一起**：
+
+```powershell
+    # ---- 页签 4 · 主数据 ----    BtnMdLoad       = Get-UiElement 'BtnMdLoad'
+```
+
+整行因此被当作注释，`$ui` 表中 **`BtnMdLoad` 从未登记**（实测 `declared 59` / `referenced 60`）。
+
+**为什么是启动致命**：入口脚本第 31 行有 `Set-StrictMode -Version 2.0`。在该模式下**读取不存在的哈希键会抛异常**，而不是返回 `$null`。于是 §14 事件路径里那句 `if ($ui.BtnMdLoad) {` 直接抛错，被顶层 `trap` 接住 → `Show-ETError` 弹窗 → 主窗口从未创建。
+
+**为什么难发现**：`-Console` 自检跑不到这一段 —— **会话 0 守卫在 XAML 加载之前就 `exit 0`**；XAML 本身完好，`FindName('BtnMdLoad')` 也能解析到。
+
+**门禁盲区（本次最大收获）**：`tools/Test-ETIntegration.ps1` §12 原有检查只验证「`$ui.<名字>` 能在 XAML 里解析到」，**证明不了该键已在 `$ui` 表里登记**。把缺陷注入回去后，旧检查**照样**输出 `60 control reference(s) all resolve`（全绿）。现已在 §12 追加反向检查 `every $ui.<Name> reference is declared in the $ui table`（逐行剥注释后统计声明，与全脚本引用名求差集）。
+
+**修复**：仅把注释与代码拆回两行，其余 59 个键未动。**未涉及任何导出函数签名**，故接口仍为 `v1.0.0`。
+
+**通则（写进本文件供后人避坑）**：
+1. `$ui.<名字>` 一旦被引用，**必须**在 `$ui = @{ … }` 里单独占一行写 `名字 = Get-UiElement '名字'`；**注释绝不能与声明挤在同一物理行**。
+2. `Set-StrictMode 2.0` 下「找不到属性」这套文案，**第一嫌疑就是 `$ui` 缺键**，不要先去查 XAML。
+
+### 10.7 `C-1` 编码合规现状（**与接口无关但影响提交**）
 
 | 文件范围 | BOM | 状态 |
 |---|---|---|

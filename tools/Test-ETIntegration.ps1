@@ -263,6 +263,46 @@ Check 'every $ui.<Name> exists in the XAML' {
     ("{0} control reference(s) all resolve" -f $refs.Count)
 } | Out-Null
 
+# 上面那条只证明「$ui.X 在 XAML 里存在」。它【证明不了 X 在 $ui 表里被登记过】——
+# 一次注释/代码被挤成同一行的编辑事故（G-06）会把 `BtnMdLoad = Get-UiElement 'BtnMdLoad'`
+# 整行变成注释，于是 $ui 少一个键。此时上一条依然全绿（XAML 里名字还在），
+# 但脚本一读到 $ui.BtnMdLoad，Set-StrictMode 2.0 就抛「在此对象上找不到属性」，
+# 主窗口直接启动失败（2026-09-30 实际发生）。所以必须单独守一条。
+Check 'every $ui.<Name> reference is declared in the $ui table' {
+    $entryPath = Join-Path $Root 'Start-ETWorkbench.ps1'
+    $entryText = Get-Content -LiteralPath $entryPath -Raw -Encoding UTF8
+
+    $start = $entryText.IndexOf('$ui = @{')
+    if ($start -lt 0) { throw 'cannot locate the $ui hashtable in Start-ETWorkbench.ps1' }
+    $end = $entryText.IndexOf("`n}", $start)
+    if ($end -lt 0) { throw 'cannot locate the end of the $ui hashtable in Start-ETWorkbench.ps1' }
+    $block = $entryText.Substring($start, $end - $start)
+
+    # 声明：先剥掉每行 '#' 之后的内容，被注释掉的行就不会被算作已声明。
+    $declared = @()
+    foreach ($line in ($block -split "`n")) {
+        $code = $line
+        $ci = $code.IndexOf('#')
+        if ($ci -ge 0) { $code = $code.Substring(0, $ci) }
+        foreach ($m in [regex]::Matches($code, '^\s*([A-Za-z][A-Za-z0-9_]*)\s*=\s*Get-UiElement')) {
+            $declared += $m.Groups[1].Value
+        }
+    }
+
+    # 引用：哈希表块【之外】的全部 $ui.<Name>
+    $outside = $entryText.Substring(0, $start) + $entryText.Substring($end)
+    $missing = @()
+    foreach ($m in [regex]::Matches($outside, '\$ui\.([A-Za-z][A-Za-z0-9_]*)')) {
+        $n = $m.Groups[1].Value
+        if ($declared -notcontains $n -and $missing -notcontains $n) { $missing += $n }
+    }
+
+    if ($missing.Count -gt 0) {
+        throw ("reference(s) used but never declared in the `$ui table: {0}" -f ($missing -join ', '))
+    }
+    ("{0} declared key(s); every reference declared" -f (($declared | Sort-Object -Unique).Count))
+} | Out-Null
+
 # ================================================================ summary
 Write-Host ''
 Write-Host '============================================================' -ForegroundColor Cyan

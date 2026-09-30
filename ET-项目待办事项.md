@@ -1,6 +1,6 @@
 # ET 项目待办事项
 
-> **版本** V1.8 · **更新日期** 2026-09-29 · **状态** 维护中
+> **版本** V1.9 · **更新日期** 2026-09-30 · **状态** 维护中
 >
 > 本文件是 ET 工作台项目**待办事项与未决问题的唯一汇聚点**。
 >
@@ -113,6 +113,7 @@
 | **T-38** | **计划任务侧消费本机设置**：采集/上报间隔只在注册任务时被读取，GUI 已降级为**只读展示**（避免假开关） | 开发 A | ⬜ |
 | **T-39** | **修 `Test-ETIntegration.ps1` 陈旧探针**：`DgSoftware` 已不存在，软报告 `7/8` ⇒ 门禁悄悄失效 | 开发 A | ⬜ |
 | **D-12** | **死代码与不实注释**：`Resolve-ETPlateInfo` 无调用点；`Label` / `Pill` 样式未被引用 | 开发 A | ⬜ |
+| **D-13** | **主窗口启动即失败（P0）**：注释与代码被挤到同一物理行 ⇒ `BtnMdLoad` 未登记进 `$ui` ⇒ `Set-StrictMode 2.0` 读该键抛「找不到属性」 | 开发 A | ✅ |
 
 > 本节只列**需要优先处理**的项；§2 与 §3 才是**完整清单**。
 
@@ -122,14 +123,19 @@
 |---|---:|---:|
 | B 待业务决策 | 9 | 6 |
 | T 开发待办 | 24 | 16 |
-| D 已知缺陷 | 6 | 4 |
-| G 工程护栏 | 6 | 1 |
+| D 已知缺陷 | 6 | 5 |
+| G 工程护栏 | 6 | 2 |
 | M 文档维护 | 4 | 0 |
-| **合计** | **49** | **27** |
+| **合计** | **49** | **29** |
 
 > **本次计法说明（`V1.8`）**：
 > · `T` 已完成 **15 → 16**：新增 `T-41`（主窗口界面四项改动 + 页签标题寻址，同日修复并闭环），**不计入未完成**。
 > · 故合计未完成仍 **49** / 已完成 **26 → 27**。其余各类分母不变。
+>
+> **本次计法说明（`V1.9`）**：
+> · 新增 `D-13`（主窗口启动即失败）——**同日发现、同日修复并闭环**，故 `D` 已完成 **4 → 5**、未完成仍 **6**；
+> · `G-06` 事故计数 **6 → 7**（`D-13` 就是第 7 次），故 `G` 已完成 **1 → 2**、未完成仍 **6**；
+> · **合计未完成仍 `49` / 已完成 `27 → 29`**。**本次 0 条新增未完成项。**
 
 > **本次计法说明（`V1.7`）**：
 > · `T` 已完成 **14 → 15**：新增 `T-40`（单实例限制，同日修复并闭环），**不计入未完成**。
@@ -435,6 +441,7 @@ New-Item -ItemType File -Force "$env:ProgramData\ETWorkbench\Local\Snapshot\plat
 | **D-09** | **主窗口控制台黑窗** —— 从铭牌进主窗口已隐藏控制台（`T-18`），但**双击 `Start-ETWorkbench.bat` 仍会闪黑窗**，与“像桌面组件”观感冲突 | P1 | ⬜ | §3.3 详情 |
 | **D-10** | **主窗口三态判定与铭牌分叉（违反 `B-02`）** —— 铭牌 5 条规则判 Alarm/Warn，主窗口曾用 `Alarms>0` 简化逻辑 ⇒ **未接入清单 / 共享不可达 / 设备未识别在主窗口显示绿灯** | P0 | ✅ | `B-02` / §3.7 详情 |
 | **D-12** | **死代码与不实注释** —— `Resolve-ETPlateInfo` 无调用点；`Label` / `Pill` 样式未被引用 | P2 | ⬜ | §3.7 详情 |
+| **D-13** | **主窗口启动即失败** —— 注释与代码被挤到**同一物理行**，`$ui` 表里的 `BtnMdLoad` 整行被当成注释 ⇒ **该键从未登记**；`Set-StrictMode -Version 2.0` 下读到不存在的键**抛错**，被顶层 `trap` 接到弹出「工作台启动失败」，**主窗口从未打开** | P0 | ✅ | §3.8 详情 |
 
 ### 3.4 工程护栏
 
@@ -447,7 +454,7 @@ New-Item -ItemType File -Force "$env:ProgramData\ETWorkbench\Local\Snapshot\plat
 | **G-06** | **局部替换编辑工具的「部分匹配」静默污染**：`oldString` 只命中行/块前半部分时，剩余尾巴被原样保留并拼在新内容之后 | P1 | ⬜ |
 | **G-07** | **页签索引顺序契约 + 三层计数核对**：`MainTabs` 索引一旦重排即打断脚本导航语义；「规则数 / 卡片数 / 告警数」必须可逐层核对 | P1 | 🟡 寻址部分已解 |
 
-**G-06 详情（工具链护栏）** —— 本仓库**反复**被同一类事故咬到，已累计 **6 次**：
+**G-06 详情（工具链护栏）** —— 本仓库**反复**被同一类事故咬到，已累计 **7 次**：
 
 | 次数 | 位置 | 症状 |
 |:---:|---|---|
@@ -457,6 +464,7 @@ New-Item -ItemType File -Force "$env:ProgramData\ETWorkbench\Local\Snapshot\plat
 | 4 | 进度 §7 `N-16` 尾部 | 前一次替换的残留拼进新内容 |
 | 5 | 本文件 §6 更新日志 | **`V1.3` 行与 `V1.4` 行挤成同一物理行**（1593 字符）——2026-09-29 本次会话修复 |
 | 6 | 记忆文件 `et-workbench.md` | `old_str` 只覆盖块开头 ⇒ **整块被复制一份**，212 行涨到 282 行 |
+| 7 | `Start-ETWorkbench.ps1:379`（`$ui` 表内） | 注释与代码挤成同一物理行 ⇒ `BtnMdLoad = Get-UiElement 'BtnMdLoad'` **整行变注释、从未登记**；严格模式下读键抛「找不到属性」⇒ **主窗口启动即失败**（2026-09-30，见 `D-13`） |
 
 **根因**：`replace_string_in_file` / `multi_replace_string_in_file` / `memory str_replace` 都只做**字面量替换**，
 不校验被替换串是否落在「语义边界」上。若 `oldString` 是某个多行块/表格行的**前缀**，
@@ -707,6 +715,60 @@ $psi.UseShellExecute = $false
 `Where-Object { $null -ne $_ }` 容错，所以**只打软报告**（`7/8 key controls resolved`）不失败 ——
 但这正是「门禁悄悄失效」的典型：以后真删掉关键控件也不会红。**修法**：换成现行名字并改成硬断言。
 
+### 3.8 主窗口启动即失败（`D-13`，同日发现并闭环）
+
+| ID | 事项 | 优先级 | 状态 |
+|---|---|:---:|:---:|
+| **D-13** | 主窗口启动失败，弹「工作台启动失败：在此对象上找不到属性"BtnMdLoad"」 | P0 | ✅ |
+
+**用户报障原文**：「**主窗口启动失败，显示找不到属性**」。
+
+**根因（已实证）** —— `ETWorkbench/Start-ETWorkbench.ps1` 第 **379** 行的**物理行**是：
+
+```text
+    # ---- 页签 4 · 主数据 ----    BtnMdLoad       = Get-UiElement 'BtnMdLoad'
+```
+
+即 `G-06` 那类「注释与代码被挤到同一物理行」的事故：**整行都被 PowerShell 当成注释**，
+于是 `$ui = @{ ... }` 里的 **`BtnMdLoad` 从未登记**（实测 `declared 59` vs `referenced 60`）。
+
+后果链：§12.7 起刷新链读 `if ($ui.BtnMdLoad) { … }` ⇒ `Set-StrictMode -Version 2.0` 下
+**读取不存在的哈希键会抛错**（不是返回 `$null`）⇒ 被顶层 `trap` 接住 ⇒ `Show-ETError` 弹
+「工作台启动失败：…」⇒ **主窗口一次都没打开过**。
+
+> 为什么难排查：`-Console` 自检跑不到这里 —— 会话 0 守卫在 **XAML 加载之前**就 `exit 0`，
+> 所以命令行看一切正常；而 XAML 本身没问题、`FindName` 也能解析到 `BtnMdLoad`。
+
+**修法** —— 把注释与代码**拆回两行**（只改这一处，其余键一律未动）。
+
+**同时加装门禁（补掉「门禁盲区」）** —— `tools/Test-ETIntegration.ps1` §12 原有检查
+只证明「`$ui.<名字>` 能在 XAML 里解析到」，**证明不了「该键已在 `$ui` 表里登记」**：
+本次把这个 bug 注入回去实测，旧检查照样打 `60 control reference(s) all resolve` **全绿**。
+故新增一条反向检查：
+
+```text
+Check 'every $ui.<Name> reference is declared in the $ui table'
+```
+
+它会剥掉每行注释后统计 `$ui` 表里的 `名字 = Get-UiElement` 声明，再与全脚本 `$ui.<名字>` 引用求差集，
+**任何「用了但没登记」的名字直接红**。
+
+**闸门证据（实测）**：
+
+| 场景 | `Test-ETIntegration.ps1` §12 | 总结 |
+|---|---|---|
+| 修复前（bug 在位） | `60 control reference(s) all resolve`（**旧检查全绿，证明盲区**） + 差集报 `BtnMdLoad` | `PASS 45 / FAIL 1 / WARN 1` |
+| 修复后 | `60 control reference(s) all resolve` + `60 declared key(s); every reference declared`（**旧检查依旧全绿**） | **`PASS 46 / FAIL 0 / WARN 1`** |
+
+另跑**严格模式运行时模拟**：按 `$ui` 表真实求值（`Get-UiElement` 打桩）后逐个读取 **全部 60 个键**，
+`OK: no property-not-found error at runtime` —— 与「找不到属性」错误路径**互斥**。
+`Test-ETScripts.ps1` → `ALL CHECKS PASSED`（`22 .ps1/.psm1, 5 .json, 2 .xaml`，BOM 全齐）；
+`Start-ETWorkbench.ps1 -SelfTest` → `结论：自检通过`（13 项）。
+
+**教训（已同步进 `G-06` 第 7 条与记忆文件）**：
+门禁必须**双向**验证 —— 「XAML 里有这个控件」**和**「`$ui` 表里登记了这个键」；
+只查一向时，`G-06` 这类拼接事故造成的缺键**不会变红**。
+
 ---
 
 ## 4. 已闭环（保留追溯）
@@ -747,6 +809,7 @@ $psi.UseShellExecute = $false
 | **G-05** | 铭牌状态**无法自测**（SSH Session 0 无桌面，WPF 不能渲染） | **已解决**：XAML 可 `XamlReader::Load` + `FindName`；WPF **布局计算在无桌面下仍可运行**，可用 `Measure/Arrange` + `TranslatePoint` 实测坐标。**本次复用此能力**：无头加载两个 XAML 后逐名核对，脚本引用的 37 + 12 个名字全部命中 | 2026-09-29 |
 | **T-30** | 铭牌**回退原尺寸式样**（316×248）+ **左边缘垂直居中**；移除主窗口 `PlateSlot` | **已完成**：`PlateBar.xaml` 重写为原 `TrayBadge.xaml` 版式（唯一差异 `Topmost` T→F，F-4）；`Sync-PlatePosition` 改为 `Left = WorkArea.Left` / `Top = round(Top + (H-h)/2)`；`Add_SizeChanged` 钩子解决 `ActualHeight` 未就绪；`$Script:ui` 9→11 项；修掉 ToolTip 被覆盖缺陷；`MainWindow.xaml` 46→37 `x:Name`，`StatusBarDot` 迁入底部状态条。三闸门全绿 | 2026-09-29 |
 | **D-10** | **主窗口三态判定与铭牌分叉（违反 `B-02`）** | **已修复**：铭牌 5 条规则（`A-01`/`A-02`/`W-01`/`W-02`→红，`W-03`→黄）原样搬进主窗口 `$script:ETStateRules`；判定收敛为唯一的 `Get-ETStateVerdict`；`Add_Loaded` 的内联 `if (Alarms>0)…` **已删除**（它漏掉「未接入共享 / 共享不可达 / 设备未识别」，会在主窗口显示绿灯，与铭牌红灯直接矛盾） | 2026-09-29 |
+| **D-13** | **主窗口启动即失败（P0）** | **已修复**：`Start-ETWorkbench.ps1:379` 的注释与代码被挤成**同一物理行**（`G-06` 事故），`BtnMdLoad = Get-UiElement 'BtnMdLoad'` **整行变注释** ⇒ `$ui` 表缺键（`declared 59` vs `referenced 60`）；`Set-StrictMode -Version 2.0` 下**读不存在的哈希键抛错**（非返回 `$null`），被顶层 `trap` 接住 ⇒ 弹「工作台启动失败」⇒ 主窗口从未打开。修法：拆回两行。**同时补掉门禁盲区**：`Test-ETIntegration.ps1` §12 新增反向检查 `every $ui.<Name> reference is declared in the $ui table`（剥注释后取差集）。**负向验证**：把 bug 注入回去，旧检查仍打 `60 control reference(s) all resolve` 全绿（盲区已证实），新检查报 `BtnMdLoad` 并 `FAIL 1` | 2026-09-30 |
 | **T-32** | 主窗口由**三区桌面布局**改为 **5 页签** | **已完成**：`TabControl x:Name="MainTabs"` 由「零尺寸隐藏 + 6 个空 TabItem」改为**可见真页签**（V1.6 为 0 生产软件 / 1 警告提示 / 2 信息区 / 3 功能设置 / 4 主数据；**V1.8 按用户指令重排为 0 信息区 / 1 应用区 / 2 警告提示 / 3 功能设置 / 4 主数据，并把信息区设为启动默认页**）；`$ui` 键 37 → **49**（V1.8 → **60**）；`x:Name` 37 → **51**（V1.8 → **66**）；原三区实现随 `TabItem` 消失，已按决策 `D1` 在方案 `:43` 只加注记 | 2026-09-29 |
 | **T-41** | **主窗口界面四项改动 + 页签寻址方式重构** | **已完成**：① 页签重排为 **0 信息区 / 1 应用区 / 2 警告提示 / 3 功能设置 / 4 主数据**，信息区为启动默认页；② 顶栏标题 `现场终端数字化运维 · ET 端` → **`系统运维 · ET端`**（`FontSize 17 → 26`、`Bold`、水平+垂直居中）；③ 信息区左侧内嵌 `PlateCard`（`316×248`、圆角 16、渐变底），**逐字段复刻** `PlateBar.xaml`，新增 **11 个 `Plate*` 具名元素**，配色同源，状态**只从唯一的 `Get-ETStateVerdict` 取结论**；④ 新增 §6.5 `$script:TabIndex` / `$script:TabHome` / `Select-ETTab '<标题>'`，**5 处硬编码 `MainTabs.SelectedIndex` 全部替换**（`G-07` 寻址部分随之解掉）。另新增 §8.1.5 `$script:SamplePlate` / `$script:PlateCardVersion`、`Resolve-ETPlateInfo` 加 `Complete` 标志、§12.7 `Update-InfoPlateCard`。**闸门全绿**：`ALL CHECKS PASSED`（22 ps1/psm1 + 5 JSON + 2 XAML）/ `PASS 45 FAIL 0 WARN 1`（含 **`60 control reference(s) all resolve`**）/ `-SelfTest 结论：自检通过` | 2026-09-29 |
 | **T-37** | **设置持久化 + 开关**（`Config/settings.json`） | **已完成（含诚实口径）**：`Get-ETSettingsPath` / `Get-ETSetting` / `Set-ETSetting`（原子写 `Write-ETJsonAtomic`）；开关 3 个 + 本机偏好 5 项（日志级别 / 保留天数 / 界面字号 / 启动桌面模式 / 启动命令行只读）。⚠️ `LogLevel` / `LogRetentionDays` **当前只写不读**（消费者 `Write-ETLog` 受契约冻结，不在本次改），已如实记录不夸大 | 2026-09-29 |
@@ -795,3 +858,4 @@ $psi.UseShellExecute = $false
 | 2026-09-29 | V1.6 | **主窗口页签化重构（新增 §3.7，登记 13 条）**。**① 新增 `B-14`/`B-15`**（三区 vs 页签以哪版为准 / 「一键更新」的真实期望边界）；**② 新增 `T-32`…`T-39`**：页签化重构（✅）、软件分类两阶段（🟡 阶段一）、网络连通性指标源、事件日志明细、与系统清单对比、设置持久化（✅）、计划任务侧消费设置（已降级为只读展示）、修 `Test-ETIntegration.ps1` 陈旧探针（`DgSoftware` 已不存在，软报告 `7/8`）；**③ 新增 `D-10`（P0）并同日闭环**：主窗口三态判定与铭牌分叉，违反 `B-02` —— 铭牌 5 条规则原样搬入主窗口、判定收敛为唯一 `Get-ETStateVerdict`、删除 `Add_Loaded` 内联 `if (Alarms>0)…`；**④ 新增 `D-12`**（`Resolve-ETPlateInfo` 死代码 / `Label`·`Pill` 样式未引用，部分闭环）；**⑤ 新增 `G-07`**（页签索引顺序契约 + 三层计数核对）；**⑥ 另修一处真缺陷并写入 §3.7**：`Update-AlarmSummary` 按 `Sample.Status -eq 'Alarm'` 统计，而取值域只有 `Ok`/`Unknown` ⇒ **告警卡片恒显 0／绿**，改为按 `$snap.Alarms` 归口统计、`Unknown` 单独计灰色；**⑦ 新增两个 A 独占配置**：`Config/settings.json`（本地覆盖层，键名不落 `workstation.json`）、`Config/software-categories.json`（软件分类，兜底「其他」）；**⑧ 诚实口径**：`LogLevel` / `LogRetentionDays` **当前只写不读**（消费者 `Write-ETLog` 受契约冻结），"计划任务节奏"刻意做成**只读**避免假开关；**⑨ 回归三闸门全绿**：`Test-ETScripts.ps1` `Scanned: 20 .ps1/.psm1, 5 .json, 2 .xaml` + `ALL CHECKS PASSED`、`Test-ETIntegration.ps1` `PASS 45/FAIL 0/WARN 1` + **`49 control reference(s) all resolve`**、`-SelfTest` 13 通过；**⑩ 计数核对**：`x:Name` 37 → **51**、`$ui` 键 37 → **49**；**⑪ 统计同步**（未完成 39 → **49**，已完成 22 → **25**）——**本文件仍保持无 BOM** |
 | 2026-09-29 | V1.7 | **单实例限制修复（新增并同日闭环 `T-40`）**。**① 真缺陷**：铭牌与主窗口的重复打开拦截**看起来生效、实际未生效** —— 拦截分支里调用了**当时尚未定义 / 尚未 `Add-Type` 的东西**（主窗口 `Show-ETError` 定义在函数定义之后；铭牌的 `[System.Windows.MessageBox]` 要等第 4 步才 `Add-Type PresentationFramework`）⇒ 抛「无法识别 / 找不到类型」→ 被**外层大 catch 吞掉** → 脚本继续往下执行 → **照样弹出第二个窗口/铭牌**；**② 修法**：两把 `Global\` 命名互斥锁提到**最前面**（主窗口 §0.5、铭牌 §1，**均在会话 0 守卫之前**，否则无桌面会话测不到）；拦截分支**先 `Write-Host` 再弹窗**、弹窗自带 `try/catch` 且限定 `if ([System.Environment]::UserInteractive)`（无桌面会话里 `MessageBox` 无人点击 ⇒ 永不返回 ⇒ 表现为「卡住」）、最后**无条件 `exit 0`**；锁存入**脚本作用域变量**（`Mutex` 有线程亲和性，局部变量被 GC 回收后锁会释放）；另加 `Get-CimInstance Win32_Process` + `CommandLine -like '*Start-ETWorkbench.ps1*'` / `'*Start-ETPlate.ps1*'` 兜底；**③ 新增验证工具**：`tools/Test-ETMutexProbe.ps1`（持锁 N 秒看第二进程是否 `BLOCKED`）、`tools/Verify-ETSingleInstance.ps1`（6 节端到端，含锁状态 `FREE`/`HELD` 探针），**两者内容全 ASCII**（编写时**刻意无 BOM**；**2026-09-30 已补加 BOM**，内容未变，`Test-ETScripts.ps1` 现已无 `MISSING a BOM` 报告 —— 故**不要再把「无 BOM」当作这两个文件的识别特征**；`tools/` 下脚本只许写 ASCII 的真正原因是：**含中文的**无 BOM `.ps1` 会被 PS 5.1 按 ANSI 解析而报假语法错误，见 `G-06`）；**④ 实测证据**：§4 铭牌被拦 → `[ET-Plate] ET 设备铭牌已打开，不能重复打开。`、§5 主窗口被拦 → `[ET] ET 工作台已打开，不能重复打开。`，两次均退出且锁未被第二实例夺取；**⑤ 回归三闸门全绿**：`Test-ETIntegration.ps1` `PASS 45 / FAIL 0 / WARN 1`、`-SelfTest` `结论：自检通过`、两入口脚本 BOM 均在（`Start-ETWorkbench.ps1` / `Start-ETPlate.ps1`）；**⑥ 另记一处**：不带 `-Console` 运行主窗口在会话 0 下**没有任何输出是正常的**（会话 0 提示走 `Write-Boot`，默认参数下静默），**不是缺陷**，排查时不要误判；**⑦ 统计同步**（未完成仍 **49**，已完成 25 → **26**，`T` 类 14 → 15）——**本文件仍保持无 BOM** |
 | 2026-09-29 | V1.8 | **主窗口界面四项改动 + 页签寻址方式重构（新增并同日闭环 `T-41`，`G-07` 部分闭环）**。**① 用户指令原文**：「主窗口界面修改：1. 信息区 页签放到左边第一个；2. 现场终端数字化运维·ET端 修改为 系统运维 · ET端 并增大字号居中；3. 信息区 要有一个和铭牌一模一样的标签，位置也一样；4. 主窗口打开默认 在信息区」——四项**全部落地**。**② 页签重排**：`MainWindow.xaml` 的 `TabItem` 顺序由「0 生产软件 / 1 警告提示 / 2 信息区 / 3 功能设置 / 4 主数据」改为 **「0 信息区 / 1 应用区 / 2 警告提示 / 3 功能设置 / 4 主数据」**，**信息区成为启动默认页**（首个 `TabItem`，WPF 默认 `SelectedIndex=0`）。**③ 顶栏标题**：`现场终端数字化运维 · ET 端` → **`系统运维 · ET端`**，`FontSize 17 → 26` + `FontWeight=Bold` + 水平垂直居中（`TextTrimming=CharacterEllipsis` 防溢出）。**④ 信息区内嵌铭牌卡片**：新增 `PlateCard` 样式（`316×248`、`CornerRadius=16`、渐变 `#FF17395F→#FF0D2338→#FF08182A`、边框 `#553FA9E0`）与 **11 个 `Plate*` 具名元素**（`PlateStrip`/`PlateTitle`/`PlateStatusPill`/`PlateStatusDot`/`PlateStatusText`/`PlateEquip`/`PlateEt`/`PlateIp`/`PlateMpc`/`PlateVer`/`PlateUpdated`），**逐字段复刻** `PlateBar.xaml` 的 5 行版式；配色与铭牌**同源**（`#FF2FBF71`/`#FFF2C94C`/`#FFE5533D`），状态**只从唯一的 `Get-ETStateVerdict` 取结论**（不新增第二份判据，防 `D-10` 复发）；原信息区内容整体右移为第二列，**旧的信息区 `TabItem` 已删除**（否则同名 `x:Name` 重复会让 `XamlReader::Load` 抛错）。**⑤ 页签寻址方式重构（`G-07` 寻址半边）**：新增 §6.5 —— `$script:TabIndex = @{ '信息区'=0; '应用区'=1; '警告提示'=2; '功能设置'=3; '主数据'=4 }`、`$script:TabHome='信息区'`、`Select-ETTab '<标题>'`（未登记标题记 `Warn` 并返回 `$false`，不抛错）；**5 处硬编码 `MainTabs.SelectedIndex` 全部替换**（`Invoke-ETAppLaunch` 空白目标与尾部、软件卡片「更新」→ `功能设置`；一键更新 → `应用区`；`Esc` 归位与启动默认 → `$script:TabHome`）。**今后重排顺序只需同步该映射表与 XAML，不会再出现「改了 XAML 忘了改脚本」。** **⑥ 新增数据与刷新链**：§8.1.5 `$script:SamplePlate`（`W098`/`ZET1025`/`096`，与铭牌同值）+ `$script:PlateCardVersion='1.1.0'`；`Resolve-ETPlateInfo` 新增 `Complete` 标志（三个编号是否齐全）；`Get-ETAlarmState` 新增 `FromSample` 字段（**仅用于「示例」文案，不参与规则判定**）；新增 §12.7 `Update-InfoPlateCard`（IP 取 `Get-ETBusinessIp` 的 `Addresses[0]`，失败回退 `(未获取)`；三编号**整体**回退示例值，任一缺失就全部用示例并在标题加 `· 示例`），挂进 `Add_Loaded`、`BtnHealthCheck`、`BtnOneKeyUpdate` 三条刷新链。**⑦ 顺手修掉 `D-12` 的一半**：`Resolve-ETPlateInfo` 原先**无调用点**（死代码），现被 `Update-InfoPlateCard` 调用（`Label`/`Pill` 样式仍未引用，故 `D-12` 只标 🟡）。**⑧ 回归三闸门全绿**：`Test-ETScripts.ps1` → `Scanned: 22 .ps1/.psm1, 5 .json, 2 .xaml` + **`ALL CHECKS PASSED`**；`Test-ETIntegration.ps1` → **`PASS 45 / FAIL 0 / WARN 1`**（`WARN` 为既有的「主数据快照为空」软跳过）+ **`60 control reference(s) all resolve`**（V1.6 为 49，本次新增 11 个 `Plate*`）；`-SelfTest` → **`结论：自检通过`**（13 项）。**⑨ 无头 XAML 核对**：`x:Name` 总数 **66**，唯一重复组仍为模板作用域内的 `Bd ×5`（非缺陷），`TabItem` 标题序为 `信息区 | 应用区 | 警告提示 | 功能设置 | 主数据`。**⑩ 计数核对**：`x:Name` 51 → **66**、`$ui` 键 49 → **60**。**⑪ 未纳入本次的遗留**：`Test-ETIntegration.ps1` §11 的 `DgSoftware` **陈旧探针**（该控件 V2.6 已不存在 ⇒ 输出 `7/8`，门禁悄悄失效）仍待办（`T-39`）；`G-07` 的「规则数／卡片数／告警数三层核对」半边**仍未做**。**⑫ 文档同步**：本文件 **V1.7 → V1.8**、`ET-SYS_开发进度.md` **V2.9 → V3.0**（新增完成项 20 与 V3.0 日志行）、`ET-SYS_开发方案.md`（§2.1 `E-07` 注记 + §5.4/§12 页签清单）、`docs/ET工作台方案_Version2.md` §1 实现注记均已同页签新顺序。**⑬ 统计同步**（未完成仍 **49**，已完成 26 → **27**，`T` 类 15 → 16）——**本文件仍保持无 BOM**。**⑭ 补记（2026-09-30）**：`tools/Test-ETMutexProbe.ps1` / `tools/Verify-ETSingleInstance.ps1` 已被**补加 UTF-8 BOM**（内容一字未改，`Test-ETScripts.ps1` 不再报 `MISSING a BOM`）——V1.7 行里「两者全 ASCII / 无 BOM」的措辞**已同步更正为「内容全 ASCII」**，以免后人误把「无 BOM」当作这两个文件的识别特征。 |
+| 2026-09-30 | V1.9 | **主窗口启动即失败（P0）—— 新增 `D-13`，同日发现、同日修复并闭环**。**① 用户报障原文**：「主窗口启动失败，显示找不到属性」。**② 根因（已实证）**：`ETWorkbench/Start-ETWorkbench.ps1` 第 **379** 行的物理行是 `    # ---- 页签 4 · 主数据 ----    BtnMdLoad       = Get-UiElement 'BtnMdLoad'` —— 即 `G-06` 那类「注释与代码被挤到同一物理行」事故，**整行被当成注释**，`$ui` 表里的 **`BtnMdLoad` 从未登记**（实测 `declared 59` / `referenced 60`）；§12.7 刷新链读 `if ($ui.BtnMdLoad)` ⇒ `Set-StrictMode -Version 2.0` 下**读不存在的哈希键会抛错**（**不是**返回 `$null`）⇒ 被顶层 `trap` 接住 ⇒ `Show-ETError` 弹「工作台启动失败：…」⇒ **主窗口一次都没打开过**。**③ 为何难查**：`-Console` 跑不到这里 —— 会话 0 守卫在 **XAML 加载之前**就 `exit 0`，故命令行看起来「一切正常」；XAML 本身无问题、`FindName` 也能解析到 `BtnMdLoad`。**④ 修法**：把注释与代码**拆回两行**（**只改这一处**，其余 59 个键未动）。**⑤ 补门禁盲区（本题重点）**：`tools/Test-ETIntegration.ps1` §12 原有检查只证明「`$ui.<名字>` 能在 XAML 里解析到」，**证明不了「该键已在 `$ui` 表里登记」**；新增反向检查 `every $ui.<Name> reference is declared in the $ui table`（逐行剥注释后统计 `名字 = Get-UiElement` 声明，与全脚本 `$ui.<名字>` 引用求**差集**，任一「用了但没登记」的名字直接红）。**⑥ 闸门证据（双向实测）**：修复后 → `60 control reference(s) all resolve` + **`60 declared key(s); every reference declared`** + **`PASS 46 / FAIL 0 / WARN 1`**；把 bug **注入回去** → 旧检查**照样** `60 control reference(s) all resolve` **全绿**（**盲区已实证**）+ 差集报 `BtnMdLoad` + `PASS 45 / FAIL 1 / WARN 1`；恢复修复后再跑全绿。另做**严格模式运行时模拟**：按 `$ui` 表真实求值（`Get-UiElement` 打桩）后逐个读取**全部 60 个键** → `OK: no property-not-found error at runtime`。`Test-ETScripts.ps1` → `ALL CHECKS PASSED`（`22 .ps1/.psm1, 5 .json, 2 .xaml`，BOM 全齐）；`Start-ETWorkbench.ps1 -SelfTest` → `结论：自检通过`。**⑦ `G-06` 事故计数 6 → 7**（本次即第 7 次，已补入表），并回写记忆文件「严格模式哈希缺键 = 启动致命」一课。**⑧ 统计同步**：`D` 已完成 4 → **5**、`G` 已完成 1 → **2**，**合计未完成仍 `49` / 已完成 `27 → 29`**（**本次 0 条新增未完成项**）——**本文件仍保持无 BOM** |

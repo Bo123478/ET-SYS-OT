@@ -376,7 +376,8 @@ $ui = @{
     BtnSavePreferences   = Get-UiElement 'BtnSavePreferences'
     TxtScheduleNote      = Get-UiElement 'TxtScheduleNote'
 
-    # ---- 页签 4 · 主数据 ----    BtnMdLoad       = Get-UiElement 'BtnMdLoad'
+    # ---- 页签 4 · 主数据 ----
+    BtnMdLoad       = Get-UiElement 'BtnMdLoad'
     CmbMdKind       = Get-UiElement 'CmbMdKind'
     TxtMdPath       = Get-UiElement 'TxtMdPath'
     BtnMdValidate   = Get-UiElement 'BtnMdValidate'
