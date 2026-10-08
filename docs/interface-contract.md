@@ -1027,7 +1027,7 @@ function Show-Shape {
 # 1) 编码 + 语法
 .\tools\Test-ETScripts.ps1
 
-# 2) 集成（当前基线：PASS 45 / FAIL 0 / WARN 1）
+# 2) 集成（当前基线：PASS 46 / FAIL 0 / WARN 1）
 .\tools\Test-ETIntegration.ps1
 
 # 3) 自检（退出码 0 = 通过）
@@ -1048,7 +1048,7 @@ function Show-Shape {
 | 2 | 定义函数总数 | **89** |
 | 3 | 私有函数数 | **6** |
 | 4 | `Test-ETScripts.ps1` | `RESULT: ALL CHECKS PASSED` |
-| 5 | `Test-ETIntegration.ps1` | `PASS 45 / FAIL 0 / WARN 1` |
+| 5 | `Test-ETIntegration.ps1` | `PASS 46 / FAIL 0 / WARN 1` |
 | 6 | `Start-ETWorkbench.ps1 -SelfTest` | 退出码 `0` |
 | 7 | 新增导出函数是否已写入本文档 | 是 |
 | 8 | 是否改了别人模块的导出签名 | **否**（若是，须走 §1.3） |

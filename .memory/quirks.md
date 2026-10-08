@@ -19,6 +19,6 @@
 
 - [hacklm-memory-tool-may-be-absent] hackLM 的 storeMemory/queryMemory 工具并非每轮都挂载。工具不可用时，直接按同格式手改 .memory/*.md（# 标题 + 空行 + `- [kebab-slug] 内容`，块间空行分隔），写回后立刻用 Get-Content -Encoding UTF8 复核。
 
-- [memories-layer-not-durable] /memories/（含 repo）不是可靠持久层。2026-10-08 实测：同一会话内 /memories/ 突然全部返回「No memories found」，磁盘上也找不到对应文件（$env:USERPROFILE、.vscode-server\data\User\globalStorage、workspaceStorage 都搜过，无 memories 目录）。结论：唯一可靠记忆层 = 随 git 走的 .memory/*.md。/memories/repo/* 丢了就从 .memory 重建，别在它上面放唯一副本。
+- [memories-layer-not-durable] /memories/（含 repo）不是可靠持久层。2026-10-08 实测：同一会话内 /memories/ 突然全部返回「No memories found」，磁盘上也找不到对应文件（$env:USERPROFILE、.vscode-server\data\User\globalStorage、workspaceStorage 都搜过，无 memories 目录）。结论：唯一可靠记忆层 = 随 git 走的 .memory/*.md。/memories/repo/* 丢了就从 .memory 重建，别在它上面放唯一副本。2026-10-08 已按仓库文档重建 `et-sys-context.md` 与 `et-workbench.md`（原 108/419 行内容不可恢复 —— 转录只留本次会话、debug 日志 main.jsonl 为空、仅存在一个会话）。重建件头部已注明「细节层、冲突时以仓库文档为准」。
 
 - [never-recurse-userprofile] 别对 $env:USERPROFILE 做全量 Get-ChildItem -Recurse（含 -Force 更慢）。实测 120 秒必超时被踢到后台。查文件先限定目录：工作区、.vscode-server\data\User、$env:APPDATA。
