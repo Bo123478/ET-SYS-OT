@@ -16,6 +16,4 @@
 
 - [config-and-ownership-boundary] 分工：A=WHB（主）负责 ET.Update.psm1 / UI/*.xaml / Start-ETWorkbench.ps1 / Config/*.json（独占）/ 契约保管。B=QYX（辅）负责 ET.Identity·MasterData·Software·Transfer·Health·Outbox / Tasks/*.ps1。ET.Core.psm1 共享冻结只追加。tools/*.ps1 共享。Config/*.json 归 A 独占，B 要新配置项须先站会提出再由 A 加。
 
-- [architecture-commitments] Architectural commitments made in this project.
-
-- [current-baseline-commit] 基线（2026-10-08）：HEAD = 7f58c3f「fix(startup): 修复主窗口因 $ui 缺键启动失败 + 加装 $ui 声明反向门禁」，与 origin/master 同步。未跟踪：.github/（含 copilot-instructions.md 记忆增强段）、.memory/（5 个空壳 md，待填）。文档版本：进度 V3.1 / 待办 V1.9 / 契约 ET-IFC-001 v1.0.0 / 方案 V2.0。已知未修缺陷：D-3、D-6、D-09、T-29、D-12(半解)、T-39。
+- [current-baseline-commit] 基线（2026-10-08）：HEAD = 43bf79d「10.1假期前」，origin/master 仍在 7f58c3f，本地领先 1 个提交。.github/（含 copilot-instructions.md 记忆增强段）与 .memory/（5 个 md，hackLM 生成）已入库。文档版本：进度 V3.1 / 待办 V1.9 / 契约 ET-IFC-001 v1.0.0 / 方案 V2.0。已知未修缺陷：D-3、D-6、D-09、T-29、D-12(半解)、T-39。

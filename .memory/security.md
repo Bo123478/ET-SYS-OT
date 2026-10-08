@@ -7,5 +7,3 @@
 - [frozen-interface-contract] docs/interface-contract.md = ET-IFC-001 v1.0.0，83 个导出函数冻结基线，保管人 A(WHB)。冻结：函数名、参数名/类型/Mandatory/ValidateSet、返回结构字段名、§6 错误语义。未冻结：内部实现、私有函数、日志文案、Config/*.json 的值。改签名必须走 §1.3 流程（站会 + 变更日志 + 版本号递增）。禁单人改导出签名后提交。
 
 - [protected-files] 不得修改：ET-SYS_开发方案.md（方案基线）、SYS-Operational Technology/现场数字化运维最终方案_PowerShell_M365_Databricks.md（ET 技术基线）、docs/ET工作台方案_Version2.md（业务语义权威，只加实现注记）。必须持续更新：ET-SYS_开发进度.md（有 BOM，勿去 BOM）、ET-项目待办事项.md。
-
-- [critical-rules] Rules that must NEVER be broken. Always read this file.

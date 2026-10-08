@@ -10,10 +10,15 @@
 
 - [memory-tool-editing-quirks] memory 工具 str_replace：path 必须用 /memories/... 形式，一次一条；old_str 必须覆盖整块（只匹配开头会留下孤立旧尾巴 = 整块被复制）；repo 记忆文件用 CRLF 且正文用全角标点 ⇒ 多行 old_str 几乎必报 did not appear verbatim，解法是单行 str_replace + memory insert 按行号插入。每次编辑后立刻回读文件。
 
-- [project-quirks] Project-specific weirdness — the non-obvious stuff.
-
 - [known-open-defects] 已知缺陷勿重复报告：D-3 paths.json 声明 .ndjson 但 ET.Outbox 写 .json（待站会定）；D-6 Test-ETFreeSpace 目标盘不可达静默回退系统盘（ET.Transfer.psm1:75-110）；D-09 双击 Start-ETWorkbench.bat 留黑控制台窗（经铭牌启动不会）；T-29 双屏/任务栏在左未验证；T-39 Test-ETIntegration §11 仍探已删的 DgSoftware（稳定打印 7/8，非失败）；D-12 Resolve-ETPlateInfo 半死代码。已修：D-7、D-10、D-13。
 
 - [known-output-is-not-a-new-failure] 输出与台账里登记的已知缺陷现象一致时，算已知情况。不当新失败、不重复排查、不再报告。
 
 - [half-dead-code-not-deleted] 半死代码指还在仓库里但已无调用点的函数。发现后只登记编号，不得顺手删除或重构，去留由站会定。
+- [memory-files-eol-lf] .memory/*.md 由 hackLM 工具写入，行尾是 LF。.gitattributes 却对 *.md 声明 eol=crlf。两者不一致 ⇒ 提交时 git 会警告「LF 将被替换为 CRLF」，属无害噪声。别手动改这些文件的换行，工具下次写入又变回 LF。
+
+- [hacklm-memory-tool-may-be-absent] hackLM 的 storeMemory/queryMemory 工具并非每轮都挂载。工具不可用时，直接按同格式手改 .memory/*.md（# 标题 + 空行 + `- [kebab-slug] 内容`，块间空行分隔），写回后立刻用 Get-Content -Encoding UTF8 复核。
+
+- [memories-layer-not-durable] /memories/（含 repo）不是可靠持久层。2026-10-08 实测：同一会话内 /memories/ 突然全部返回「No memories found」，磁盘上也找不到对应文件（$env:USERPROFILE、.vscode-server\data\User\globalStorage、workspaceStorage 都搜过，无 memories 目录）。结论：唯一可靠记忆层 = 随 git 走的 .memory/*.md。/memories/repo/* 丢了就从 .memory 重建，别在它上面放唯一副本。
+
+- [never-recurse-userprofile] 别对 $env:USERPROFILE 做全量 Get-ChildItem -Recurse（含 -Force 更慢）。实测 120 秒必超时被踢到后台。查文件先限定目录：工作区、.vscode-server\data\User、$env:APPDATA。
