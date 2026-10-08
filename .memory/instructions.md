@@ -12,4 +12,5 @@
 
 - [known-defect-ledger] 每次提交后的记忆里刷新已知缺陷台账：未修的保留编号加一句话现象，修好的标已修并保留。编号一旦分配，永不删除、永不复用。
 
-- [memory-boundary-engineering-first] .memory 只存工程长期事实（架构承诺、接口契约、安全红线、可复用踩坑）。临时运行噪声（终端乱码、一次性命令输出、当次会话状态）不进 Decisions；放会话记忆或 Quirks 的「代理运行」分组。
+
+- [memory-boundary-engineering-first] .memory 只存工程长期事实。临时运行噪声不进 Decisions，放会话记忆或 Quirks 的 Agent Runtime 分组。

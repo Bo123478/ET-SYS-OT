@@ -27,4 +27,4 @@
 
 - [agent-never-recurse-userprofile] 别对 $env:USERPROFILE 做全量 Get-ChildItem -Recurse（含 -Force 更慢）。实测 120 秒必超时被踢到后台。查文件先限定目录：工作区、.vscode-server\data\User、$env:APPDATA。
 
-- [agent-push-credential-store-warning-is-harmless] 本机 `git push` 会刷一片 `fatal: Unable to persist credentials with the 'wincredman' credential store.`（Git Credential Manager 写 Windows 凭据管理器失败）。这不是推送失败。判据一律看 `git rev-list --count origin/master..HEAD` 是否为 0。
+- [agent-push-credential-store-warning-is-harmless] 本机 git push 可能报 wincredman 凭据持久化失败。判定推送是否成功只看 origin/master..HEAD 是否为 0。
