@@ -16,4 +16,4 @@
 
 - [config-and-ownership-boundary] 分工：A=WHB（主）负责 ET.Update.psm1 / UI/*.xaml / Start-ETWorkbench.ps1 / Config/*.json（独占）/ 契约保管。B=QYX（辅）负责 ET.Identity·MasterData·Software·Transfer·Health·Outbox / Tasks/*.ps1。ET.Core.psm1 共享冻结只追加。tools/*.ps1 共享。Config/*.json 归 A 独占，B 要新配置项须先站会提出再由 A 加。
 
-- [current-baseline-commit] 基线（2026-10-08）：HEAD = 43bf79d「10.1假期前」，origin/master 仍在 7f58c3f，本地领先 1 个提交。.github/（含 copilot-instructions.md 记忆增强段）与 .memory/（5 个 md，hackLM 生成）已入库。文档版本：进度 V3.1 / 待办 V1.9 / 契约 ET-IFC-001 v1.0.0 / 方案 V2.0。已知未修缺陷：D-3、D-6、D-09、T-29、D-12(半解)、T-39。
+- [current-baseline-commit] 基线（2026-10-08）：HEAD = ae48126「chore(memory): 补齐 hackLM 记忆 + 记忆同步规则」，origin/master 仍在 7f58c3f，本地领先 2 个提交。本次提交只动 .memory/ 5 个 md，未碰任何 .ps1/.psm1/.xaml/配置/接口。文档版本：进度 V3.1 / 待办 V1.9 / 契约 ET-IFC-001 v1.0.0 / 方案 V2.0。已知未修缺陷：D-3、D-6、D-09、T-29、D-12(半解)、T-39。
