@@ -34,6 +34,53 @@ function Get-WorkbenchProcesses {
         })
 }
 
+function Start-WorkbenchInInteractiveSession {
+    param(
+        [string]$ScriptPath,
+        [switch]$UseConsole
+    )
+
+    $taskName = "ETWorkbench.Restart.{0}" -f ([guid]::NewGuid().ToString('N'))
+    $startAt = (Get-Date).AddMinutes(2).ToString('HH:mm')
+
+    $launchArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"{0}"' -f $ScriptPath))
+    if ($UseConsole) { $launchArgs += '-Console' }
+    $taskCmd = 'powershell.exe {0}' -f ($launchArgs -join ' ')
+
+    $candidates = @()
+    try {
+        $who = (whoami.exe 2>$null | Out-String).Trim()
+        if ($who) { $candidates += $who }
+    }
+    catch { }
+    if ($env:USERDOMAIN -and $env:USERNAME) { $candidates += ("{0}\\{1}" -f $env:USERDOMAIN, $env:USERNAME) }
+    if ($env:COMPUTERNAME -and $env:USERNAME) { $candidates += ("{0}\\{1}" -f $env:COMPUTERNAME, $env:USERNAME) }
+    if ($env:USERNAME) { $candidates += $env:USERNAME }
+    $candidates = @($candidates | Where-Object { $_ } | Select-Object -Unique)
+
+    $created = $false
+    foreach ($runUser in $candidates) {
+        $null = & schtasks.exe /Create /TN $taskName /SC ONCE /ST $startAt /F /RL LIMITED /IT /RU $runUser /TR $taskCmd
+        if ($LASTEXITCODE -eq 0) {
+            $created = $true
+            break
+        }
+    }
+    if (-not $created) {
+        throw "Failed to create interactive task via schtasks for current user."
+    }
+
+    $null = & schtasks.exe /Run /TN $taskName
+    if ($LASTEXITCODE -ne 0) {
+        throw "Failed to run interactive task via schtasks."
+    }
+
+    Start-Sleep -Seconds 2
+    & schtasks.exe /Delete /TN $taskName /F | Out-Null
+
+    return $taskName
+}
+
 $before = Get-WorkbenchProcesses
 
 if ((@($before)).Count -gt 0) {
@@ -62,10 +109,16 @@ if (Test-Path -LiteralPath $sentinelPath) {
     Remove-Item -LiteralPath $sentinelPath -Force -ErrorAction SilentlyContinue
 }
 
-$args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $entryScript)
-if ($Console) { $args += '-Console' }
-
-$newProc = Start-Process powershell.exe -ArgumentList $args -PassThru
+$newProc = $null
+$interactiveTaskName = $null
+if ([Environment]::UserInteractive) {
+    $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $entryScript)
+    if ($Console) { $args += '-Console' }
+    $newProc = Start-Process powershell.exe -ArgumentList $args -PassThru
+}
+else {
+    $interactiveTaskName = Start-WorkbenchInInteractiveSession -ScriptPath $entryScript -UseConsole:$Console
+}
 
 Start-Sleep -Seconds ([Math]::Max(1, $StartupWaitSec))
 
@@ -74,11 +127,21 @@ $ok = (@($running)).Count -gt 0
 $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 
 if ($ok) {
-    Write-Host "[ET] Restart completed at $ts. Workbench PID: $($newProc.Id)" -ForegroundColor Green
+    if ($newProc) {
+        Write-Host "[ET] Restart completed at $ts. Workbench PID: $($newProc.Id)" -ForegroundColor Green
+    }
+    else {
+        Write-Host "[ET] Restart completed at $ts. Workbench launched to interactive desktop session." -ForegroundColor Green
+    }
     exit 0
 }
 
-if ($newProc.HasExited -and $newProc.ExitCode -eq 0) {
+if ($interactiveTaskName) {
+    Write-Host "[ET] Restart dispatched at $ts to interactive desktop session via task '$interactiveTaskName'." -ForegroundColor Green
+    exit 0
+}
+
+if ($newProc -and $newProc.HasExited -and $newProc.ExitCode -eq 0) {
     Write-Host "[ET] Restart workflow completed at $ts. Workbench started and exited normally (likely non-interactive session)." -ForegroundColor Green
     exit 0
 }
