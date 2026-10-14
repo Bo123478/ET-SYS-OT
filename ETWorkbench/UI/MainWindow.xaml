@@ -35,7 +35,8 @@
   铭牌（UI\PlateBar.xaml）：
     「铭牌」是【另一个进程的无边框窗口】（Start-ETPlate.ps1），
     位置 = 工作区【左边缘、垂直居中】，尺寸 316 x 248（竖版工业铭牌卡）。
-    ⇒ 它是独立窗口，与本窗口【不做像素对齐】。
+    ⇒ 本窗口信息区内嵌铭牌需与独立铭牌保持同款外观 + 同停靠语义（左贴边、垂直居中），
+       从铭牌切到工作台时视觉上应尽量重合，避免“铭牌跳位”的割裂感。
     ⇒ 铭牌与主窗口都会沉底，Z 序谁上谁下都不影响观感，不必额外协调。
     ⇒ 本窗口内的状态色指示只有底部状态条的 StatusBarDot（三态灯）。
 
@@ -247,19 +248,17 @@
       <Setter Property="Background" Value="#FFFFFFFF"/>
     </Style>
 
-    <!-- ============ 内嵌铭牌卡（「信息区」左列，版式与 PlateBar.xaml 一致） ============
-         316 x 248、左侧 6px 整高状态灯条、四角 16 圆角、深色工业渐变底。
-         与 PlateBar.xaml 的差异仅两处，均为「内嵌控件 vs 独立窗口」的必然差异：
-           · 不画窗口阴影（内嵌卡片再叠阴影显脏）
-           · 四角都圆（铭牌窗口只圆右侧，因为它紧贴屏幕左边缘）
+    <!-- ============ 内嵌铭牌卡（「信息区」左列，版式与 PlateBar.xaml 对齐） ============
+         316 x 248、左侧 6px 整高状态灯条、右侧圆角、深色工业渐变底。
+         目标：与独立铭牌保持同款视觉，让“打开工作台”像铭牌未关闭。
          三态颜色不是写死的：由 Start-ETWorkbench.ps1 §12.7 Update-PlateCard 赋值，
          初始值 #FF2FBF71 只代表「加载瞬间 = 正常」。 -->
     <Style TargetType="Border" x:Key="PlateCard">
       <Setter Property="Width" Value="316"/>
       <Setter Property="Height" Value="248"/>
-      <Setter Property="CornerRadius" Value="16"/>
+      <Setter Property="CornerRadius" Value="0,16,16,0"/>
       <Setter Property="BorderBrush" Value="#553FA9E0"/>
-      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="BorderThickness" Value="0,1,1,1"/>
       <Setter Property="ClipToBounds" Value="True"/>
       <Setter Property="Background">
         <Setter.Value>
@@ -268,6 +267,11 @@
             <GradientStop Color="#FF0D2338" Offset="0.55"/>
             <GradientStop Color="#FF08182A" Offset="1"/>
           </LinearGradientBrush>
+        </Setter.Value>
+      </Setter>
+      <Setter Property="Effect">
+        <Setter.Value>
+          <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="315" Opacity="0.45" Color="#FF000000"/>
         </Setter.Value>
       </Setter>
     </Style>
@@ -445,20 +449,52 @@
            失败时不猜测，只报告卡在哪一步。
            ================================================================ -->
       <TabItem Header="信息区">
-        <Grid>
+        <Grid Margin="-14,0,0,0">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*" MinHeight="220"/>
+          </Grid.RowDefinitions>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="14"/>
             <ColumnDefinition Width="*"/>
           </Grid.ColumnDefinitions>
 
-          <!-- ========== 左列：内嵌铭牌卡（与 PlateBar.xaml 同版式） ========== -->
-          <Border Grid.Column="0" Style="{StaticResource PlateCard}" VerticalAlignment="Top">
+          <!-- 顶部贯穿：分类汇总（从左到右占满） -->
+          <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Style="{StaticResource Region}">
             <Grid>
-              <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="6"/>
-                <ColumnDefinition Width="*"/>
-              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+              </Grid.RowDefinitions>
+
+              <Grid Grid.Row="0" Margin="14,12,14,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="分类汇总"/>
+                <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,0,0"
+                           Text="网络连通 / Windows 系统 / 共享与清单一致性 —— 逐类给出告警与警告条数"/>
+              </Grid>
+
+              <WrapPanel Grid.Row="1" x:Name="AlarmCardPanel" Margin="14,0,14,14"/>
+            </Grid>
+          </Border>
+
+          <!-- ========== 左列：铭牌 + 状态摘要（状态摘要占满铭牌底部剩余区域） ========== -->
+          <Grid Grid.Row="1" Grid.Column="0" Margin="0,14,0,0" Width="316">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Style="{StaticResource PlateCard}" VerticalAlignment="Top">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="6"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
               <!-- 整高状态灯条：绿=正常 / 黄=警告 / 红=报警 -->
               <Border x:Name="PlateStrip" Grid.Column="0" Background="#FF2FBF71"/>
@@ -557,29 +593,16 @@
                   <TextBlock x:Name="PlateUpdated" Text="—" FontSize="10.5" Foreground="#FF5E86AE"
                              HorizontalAlignment="Right"/>
                 </Grid>
+                </Grid>
               </Grid>
-            </Grid>
-          </Border>
+            </Border>
 
-          <!-- 左右分区可视化分隔：明确「铭牌区」与「信息区」是两块独立区域 -->
-          <Border Grid.Column="1" Width="1" Margin="6,0,6,0"
-                  Background="#FFD9E1EA" VerticalAlignment="Stretch"/>
-
-          <!-- ========== 右列：状态摘要 / 本机与边界 / 识别链 ========== -->
-          <Grid Grid.Column="2" Margin="0,0,0,0">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*" MinHeight="120"/>
-              <RowDefinition Height="*" MinHeight="120"/>
-            </Grid.RowDefinitions>
-
-            <!-- 铭牌同源摘要（状态灯取的同一份判定结果 + 同一张规则表） -->
-            <Border Grid.Row="0" Style="{StaticResource Region}">
+            <!-- 铭牌底部：状态摘要（左右与铭牌边界对齐，并占满剩余高度） -->
+            <Border Grid.Row="1" Style="{StaticResource Region}" Margin="0,14,0,0" VerticalAlignment="Stretch">
               <Grid>
                 <Grid.RowDefinitions>
                   <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
                 <Grid Grid.Row="0" Margin="14,12,14,10">
@@ -592,101 +615,91 @@
                              Text="与左侧铭牌同源：判定规则表逐条一致，命中哪条就写哪条"/>
                 </Grid>
 
-                <WrapPanel Grid.Row="1" Margin="14,0,14,14">
-                  <Border Style="{StaticResource Pill}">
-                    <TextBlock x:Name="TxtInfoState" Text="状态：—"
-                               Foreground="#FF44505F" FontSize="12" FontWeight="SemiBold"/>
-                  </Border>
-                  <Border Style="{StaticResource Pill}">
-                    <TextBlock x:Name="TxtInfoRule" Text="命中：—"
-                               Foreground="#FF44505F" FontSize="12"/>
-                  </Border>
-                  <Border Style="{StaticResource Pill}">
-                    <TextBlock x:Name="TxtInfoEquip" Text="设备：—"
-                               Foreground="#FF44505F" FontSize="12"/>
-                  </Border>
-                  <Border Style="{StaticResource Pill}">
-                    <TextBlock x:Name="TxtInfoApp" Text="应用：—"
-                               Foreground="#FF44505F" FontSize="12"/>
-                  </Border>
-                  <Border Style="{StaticResource Pill}">
-                    <TextBlock x:Name="TxtInfoPending" Text="待上报：—"
-                               Foreground="#FF44505F" FontSize="12"/>
-                  </Border>
-                </WrapPanel>
-              </Grid>
-            </Border>
-
-            <!-- 本机与边界信息（含原「关于」静态内容） + 识别链 -->
-            <Border Grid.Row="1" Style="{StaticResource Region}" Margin="0,14,0,0">
-              <Grid>
-                <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" Margin="14,12,14,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="本机与边界"/>
-                  <Button x:Name="BtnIdentify" Grid.Column="1" Style="{StaticResource Ghost}"
-                          Content="开始识别"/>
-                </Grid>
-
-                <TextBlock Grid.Row="1" Margin="14,0,14,10" TextWrapping="Wrap"
-                           Foreground="#FF8A97A6" FontSize="11"
-                           Text="识别链：物理机序列号 → 业务 IP → 设备编号 → 工程编号 → 应用 → 批准版本。失败时不猜测，只报告卡在哪一步。"/>
-              </Grid>
-            </Border>
-
-            <!-- 运行说明区（把原纯文本输出提升为可感知区域） -->
-            <Border Grid.Row="2" Style="{StaticResource Region}" Margin="0,14,0,0">
-              <Grid>
-                <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" Margin="14,12,14,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="运行说明"/>
-                  <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,0,0"
-                             Text="显示当前页面的静态说明与边界约束，便于现场快速对齐口径。"/>
-                </Grid>
-
-                <TextBox Grid.Row="1" x:Name="TxtAbout" Style="{StaticResource Output}"
-                         Margin="14,0,14,14"/>
-              </Grid>
-            </Border>
-
-            <!-- 识别过程区（把原日志输出区提升为独立区域） -->
-            <Border Grid.Row="3" Style="{StaticResource Region}" Margin="0,14,0,0">
-              <Grid>
-                <Grid.RowDefinitions>
-                  <RowDefinition Height="Auto"/>
-                  <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" Margin="14,12,14,10">
-                  <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                  </Grid.ColumnDefinitions>
-                  <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="识别过程"/>
-                  <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,0,0"
-                             Text="记录『物理机序列号 → 业务 IP → 设备/工程/应用』每一步结果与失败原因。"/>
-                </Grid>
-
-                <TextBox Grid.Row="1" x:Name="TxtIdentityOut" Style="{StaticResource Output}"
-                         Margin="14,0,14,14"/>
+                <ScrollViewer Grid.Row="1" Margin="14,0,14,14"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Disabled">
+                  <WrapPanel>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoState" Text="状态：—"
+                                 Foreground="#FF44505F" FontSize="12" FontWeight="SemiBold"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoRule" Text="命中：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoEquip" Text="设备：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoApp" Text="应用：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoPending" Text="待上报：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoProject" Text="工程：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoUpload" Text="上传：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                    <Border Style="{StaticResource Pill}">
+                      <TextBlock x:Name="TxtInfoCsvDate" Text="清单更新：—"
+                                 Foreground="#FF44505F" FontSize="12"/>
+                    </Border>
+                  </WrapPanel>
+                </ScrollViewer>
               </Grid>
             </Border>
           </Grid>
+
+          <!-- 左右分区可视化分隔：明确「铭牌区」与「信息区」是两块独立区域 -->
+          <Border Grid.Row="1" Grid.Column="1" Width="1" Margin="6,14,6,0"
+                  Background="#FFD9E1EA" VerticalAlignment="Stretch"/>
+
+          <!-- 右列：详细列表（占满分类汇总以下剩余区域） -->
+          <Border Grid.Row="1" Grid.Column="2" Style="{StaticResource Region}" Margin="0,14,0,0" VerticalAlignment="Stretch">
+            <Grid>
+              <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="2*"/>
+                <RowDefinition Height="1*"/>
+              </Grid.RowDefinitions>
+
+              <Grid Grid.Row="0" Margin="14,12,14,10">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="详细列表"/>
+                <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,8,0"
+                           Text="采集 → 评估 → 持续时长 → 防抖 → 去重 → 告警 → 恢复"/>
+                <Button x:Name="BtnHealthCheck" Grid.Column="2" Style="{StaticResource Ghost}"
+                        Content="立即检测"/>
+              </Grid>
+
+              <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="14,0,14,8">
+                <Ellipse Width="8" Height="8" Fill="{StaticResource BrAlarm}" VerticalAlignment="Center"/>
+                <TextBlock Text="报警" FontSize="11" Foreground="#FF8A97A6" Margin="4,0,12,0"/>
+                <Ellipse Width="8" Height="8" Fill="{StaticResource BrWarn}" VerticalAlignment="Center"/>
+                <TextBlock Text="警告" FontSize="11" Foreground="#FF8A97A6" Margin="4,0,12,0"/>
+                <Ellipse Width="8" Height="8" Fill="{StaticResource BrOk}" VerticalAlignment="Center"/>
+                <TextBlock Text="正常" FontSize="11" Foreground="#FF8A97A6" Margin="4,0,0,0"/>
+              </StackPanel>
+
+              <DataGrid Grid.Row="2" x:Name="GridHealth" Style="{StaticResource HealthGrid}"
+                        Margin="14,0,14,10"/>
+
+              <TextBox Grid.Row="3" x:Name="TxtHealthOut" Style="{StaticResource Output}"
+                       Margin="14,0,14,14"/>
+            </Grid>
+          </Border>
         </Grid>
       </TabItem>
 
@@ -736,85 +749,8 @@
         </Grid>
       </TabItem>
 
-      <!-- ================================================================
-           页签 2 · 警告提示
-           分类卡片汇总 + 三态图例 + 详细列表
-           三态图例与铭牌同一套色（避免两处颜色各说各话）
-           ================================================================ -->
-      <TabItem Header="警告提示">
-        <Grid>
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*" MinHeight="180"/>
-          </Grid.RowDefinitions>
-
-          <!-- 分类卡片汇总（网络 / Windows 系统 / 共享 / 与系统清单对比） -->
-          <Border Grid.Row="0" Style="{StaticResource Region}">
-            <Grid>
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-              </Grid.RowDefinitions>
-
-              <Grid Grid.Row="0" Margin="14,12,14,10">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="Auto"/>
-                  <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="分类汇总"/>
-                <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,0,0"
-                           Text="网络连通 / Windows 系统 / 共享与清单一致性 —— 逐类给出告警与警告条数"/>
-              </Grid>
-
-              <WrapPanel Grid.Row="1" x:Name="AlarmCardPanel" Margin="14,0,14,14"/>
-            </Grid>
-          </Border>
-
-          <!-- 报警区（详细列表） -->
-          <Border Grid.Row="1" Style="{StaticResource Region}" Margin="0,14,0,0">
-            <Grid>
-              <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-              </Grid.RowDefinitions>
-
-              <Grid Grid.Row="0" Margin="14,12,14,8">
-                <Grid.ColumnDefinitions>
-                  <ColumnDefinition Width="Auto"/>
-                  <ColumnDefinition Width="*"/>
-                  <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="详细列表"/>
-                <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,8,0"
-                           Text="采集 → 评估 → 持续时长 → 防抖 → 去重 → 告警 → 恢复"/>
-                <Button x:Name="BtnHealthCheck" Grid.Column="2" Style="{StaticResource Ghost}"
-                        Content="立即检测"/>
-              </Grid>
-
-              <!-- 三态图例（与铭牌同一套色，避免两处颜色各说各话） -->
-              <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="14,0,14,8">
-                <Ellipse Width="8" Height="8" Fill="{StaticResource BrAlarm}" VerticalAlignment="Center"/>
-                <TextBlock Text="报警" FontSize="11" Foreground="#FF8A97A6" Margin="4,0,12,0"/>
-                <Ellipse Width="8" Height="8" Fill="{StaticResource BrWarn}" VerticalAlignment="Center"/>
-                <TextBlock Text="警告" FontSize="11" Foreground="#FF8A97A6" Margin="4,0,12,0"/>
-                <Ellipse Width="8" Height="8" Fill="{StaticResource BrOk}" VerticalAlignment="Center"/>
-                <TextBlock Text="正常" FontSize="11" Foreground="#FF8A97A6" Margin="4,0,0,0"/>
-              </StackPanel>
-
-              <DataGrid Grid.Row="2" x:Name="GridHealth" Style="{StaticResource HealthGrid}"
-                        Margin="14,0,14,10"/>
-
-              <TextBox Grid.Row="3" x:Name="TxtHealthOut" Style="{StaticResource Output}"
-                       Height="72" Margin="14,0,14,14"/>
-            </Grid>
-          </Border>
-        </Grid>
-      </TabItem>
-
-      <!-- ================================================================
-           页签 3 · 功能设置
+       <!-- ================================================================
+         页签 2 · 功能设置
            两个开关 + 一键更新 + 维护动作
            开关语义（严格遵守红线）：
              「允许上报」      只控制 ET.Outbox 是否把事件发布到共享，不涉及下载/安装；
@@ -1011,8 +947,8 @@
         </Grid>
       </TabItem>
 
-      <!-- ================================================================
-           页签 4 · 主数据
+       <!-- ================================================================
+         页签 3 · 主数据
            方案 §13.1 锁定决策 21：主数据维护工具形态 = 工作台 GUI 内的「主数据」页签。
            主数据由运维维护并发布到共享；本机只做「拉取快照」与「草稿校验」。
            快照缓存在本机，断网时继续可用。

@@ -268,13 +268,12 @@ function Get-UiElement {
 # 所以现在【一律不再内联数字】，全部走下面这张表 + Select-ETTab 按标题寻址。
 #
 # 与 UI/MainWindow.xaml 的 TabItem 声明次序【必须一致】：
-#     0 信息区（默认打开页） · 1 生产软件 · 2 警告提示 · 3 功能设置 · 4 主数据
+#     0 信息区（默认打开页） · 1 生产软件 · 2 功能设置 · 3 主数据
 $script:TabIndex = @{
     '信息区'   = 0
     '应用区'   = 1
-    '警告提示' = 2
-    '功能设置' = 3
-    '主数据'   = 4
+    '功能设置' = 2
+    '主数据'   = 3
 }
 $script:TabHome = '信息区'   # Esc / 启动默认落点
 
@@ -336,9 +335,9 @@ $ui = @{
     TxtInfoEquip     = Get-UiElement 'TxtInfoEquip'
     TxtInfoApp       = Get-UiElement 'TxtInfoApp'
     TxtInfoPending   = Get-UiElement 'TxtInfoPending'
-    BtnIdentify      = Get-UiElement 'BtnIdentify'
-    TxtIdentityOut   = Get-UiElement 'TxtIdentityOut'
-    TxtAbout         = Get-UiElement 'TxtAbout'
+    TxtInfoProject   = Get-UiElement 'TxtInfoProject'
+    TxtInfoUpload    = Get-UiElement 'TxtInfoUpload'
+    TxtInfoCsvDate   = Get-UiElement 'TxtInfoCsvDate'
 
     # ---- 页签 1 · 应用区（生产软件 / 系统工具 / 周边）----
     BtnRefreshSoft  = Get-UiElement 'BtnRefreshSoft'
@@ -349,7 +348,7 @@ $ui = @{
     BtnDownload     = Get-UiElement 'BtnDownload'
     TxtDownloadOut  = Get-UiElement 'TxtDownloadOut'
 
-    # ---- 页签 2 · 警告提示 ----
+    # ---- 信息区并入的健康告警区（原页签“警告提示”）----
     # 注意：Topmost 不在此处 —— 本窗口永远沉底、绝不置顶（红线 F-4）。
     AlarmCardPanel  = Get-UiElement 'AlarmCardPanel'
     BtnHealthCheck  = Get-UiElement 'BtnHealthCheck'
@@ -803,27 +802,6 @@ function Set-ETWindowBottom {
     }
     catch { }
     finally { $script:Sinking = $false }
-}
-
-# ================================================================ 9. 页签 0 · 信息区：我是谁（E-02）
-if ($ui.BtnIdentify) {
-    $ui.BtnIdentify.Add_Click({
-            try {
-                $r = Invoke-ETIdentityChain
-                $sb = New-Object System.Text.StringBuilder
-                [void]$sb.AppendLine(("状态：{0}" -f $r.Status))
-                foreach ($s in $r.Steps) {
-                    [void]$sb.AppendLine(("  {0,-24} {1}" -f $s.Name, $s.Value))
-                }
-                if ($r.Status -ne 'Resolved') {
-                    [void]$sb.AppendLine('')
-                    [void]$sb.AppendLine('未完全识别。请检查主数据是否已发布，或本机业务网卡是否被网络策略过滤。')
-                }
-                Set-Output -Control $ui.TxtIdentityOut -Text $sb.ToString()
-                Update-StatusBar
-            }
-            catch { Set-Output -Control $ui.TxtIdentityOut -Text ("识别失败：{0}" -f $_.Exception.Message) }
-        })
 }
 
 # ================================================================ 10. 页签 1 · 应用区：软件状态（E-03）
@@ -1541,20 +1519,41 @@ if ($ui.BtnDownload) {
         })
 }
 
-# ================================================================ 12. 页签 2 · 警告提示：健康检测（E-05）
+# ================================================================ 12. 信息区并入块：健康检测（E-05）
 function Update-HealthGrid {
     try {
         $rows = @(Get-ETHealthMetrics)
         if ($rows.Count -eq 0) { $rows = @(Get-ETHealthMetricCatalog) }
+
+        $projected = @()
+        foreach ($r in @($rows | Where-Object { $null -ne $_ })) {
+            $rid = ''
+            try { $rid = "$($r.RuleId)" } catch { }
+            $catKey = Get-ETRuleCategoryKey -RuleId $rid
+            $catTitle = switch ($catKey) {
+                'Network' { '网络连通' }
+                'Windows' { 'Windows 系统' }
+                'Share' { '共享问题' }
+                'Compare' { '与系统清单对比' }
+                default { 'Windows 系统' }
+            }
+
+            $obj = [ordered]@{ 分类 = $catTitle }
+            foreach ($p in @($r.PSObject.Properties | ForEach-Object { $_.Name })) {
+                $obj[$p] = $r.$p
+            }
+            $projected += [pscustomobject]$obj
+        }
+
         if ($ui.GridHealth) {
             $ui.GridHealth.AutoGenerateColumns = $true
-            $ui.GridHealth.ItemsSource = $rows
+            $ui.GridHealth.ItemsSource = $projected
         }
     }
     catch { }
 }
 
-# ================================================================ 12.5 页签 2 · 警告提示：分类汇总卡片
+# ================================================================ 12.5 信息区并入块：分类汇总卡片
 #
 # 用户的期望是「网络未连接 / Windows 的系统报警 / 共享问题 / 与系统清单对比发现的错误」
 # 四类各一张汇总卡。这里把「规则 Source」映射到「分类」——
@@ -1687,7 +1686,7 @@ function New-AlarmSummaryCard {
 
 function Update-AlarmSummary {
     <#
-      .SYNOPSIS 按分类统计当前告警，刷新「警告提示」页签顶部的汇总卡片。
+    .SYNOPSIS 按分类统计当前告警，刷新信息区中的「分类汇总」卡片。
       .DESCRIPTION
         数据源 = 最后一轮健康检测的快照（Get-ETHealthSnapshot）。
 
@@ -1760,7 +1759,7 @@ function Update-AlarmSummary {
 # ================================================================ 12.6 页签 0 · 信息区：状态摘要药丸
 function Update-InfoSummary {
     <#
-      .SYNOPSIS 刷新「信息区」页签顶部 5 个药丸（状态 / 命中规则 / 设备 / 应用 / 待上报）。
+            .SYNOPSIS 刷新「信息区」页签顶部药丸（状态 / 命中规则 / 设备 / 应用 / 待上报 / 工程 / 上传日志 / 清单日期）。
       .DESCRIPTION
         「状态」与「命中」两个药丸的值直接来自 §8.2 的 Get-ETStateVerdict ——
         与铭牌、与底部状态灯【同一个结论】，不是另算一套。
@@ -1820,6 +1819,55 @@ function Update-InfoSummary {
             $ui.TxtInfoApp.Text = if ($total -eq 0) { '应用：无主数据' }
             else { ("应用：{0} 个 · 已生效 {1} · 有包未生效 {2}" -f $total, $effective, $downloaded) }
         }
+    }
+    catch { }
+
+    # ---- 4. 工程（与铭牌同源：IP -> mappings -> MpcCode） ----
+    try {
+        $projectText = '工程：—'
+        $ip = ''
+        try {
+            $b = Get-ETBusinessIp
+            if ($b -and $b.Addresses) { $ip = @($b.Addresses)[0] }
+        }
+        catch { }
+        if ($ip) {
+            $plate = Resolve-ETPlateInfo -Ip $ip
+            if ($plate -and $plate.Complete -and $plate.MpcCode) {
+                $projectText = ("工程：{0}" -f $plate.MpcCode)
+            }
+            else {
+                $projectText = ("工程：{0}（示例）" -f $script:SamplePlate.Mpc)
+            }
+        }
+        if ($ui.TxtInfoProject) { $ui.TxtInfoProject.Text = $projectText }
+    }
+    catch { }
+
+    # ---- 5. 上传日志（按 Outbox 事件类型汇总） ----
+    try {
+        $uploadText = '上传：无待上传日志'
+        $ob = Get-ETOutboxSummary
+        $parts = @()
+        foreach ($k in @($ob.ByType.Keys | Sort-Object)) {
+            $n = [int]$ob.ByType[$k]
+            if ($n -gt 0) { $parts += ("{0}:{1}" -f $k, $n) }
+        }
+        if ($parts.Count -gt 0) {
+            $uploadText = ("上传：{0}" -f ($parts -join ' | '))
+        }
+        if ($ui.TxtInfoUpload) { $ui.TxtInfoUpload.Text = $uploadText }
+    }
+    catch { }
+
+    # ---- 6. CSV/主数据清单最新更新时间（snapshot-meta TakenAt） ----
+    try {
+        $csvText = '清单更新：未加载'
+        $md = Get-ETMasterDataStatus
+        if ($md -and $md.Loaded -and $md.TakenAt) {
+            $csvText = ("清单更新：{0}" -f ([datetime]$md.TakenAt).ToString('yyyy-MM-dd HH:mm:ss'))
+        }
+        if ($ui.TxtInfoCsvDate) { $ui.TxtInfoCsvDate.Text = $csvText }
     }
     catch { }
 }
@@ -2009,18 +2057,6 @@ if ($ui.BtnSelfUpdate) {
             }
             catch { Set-Output -Control $ui.TxtUpdateOut -Text ("更新失败：{0}" -f $_.Exception.Message) }
         })
-}
-
-if ($ui.TxtAbout) {
-    $core = Get-ETCoreInfo
-    $sb = New-Object System.Text.StringBuilder
-    [void]$sb.AppendLine('ET 工作台 —— 现场终端数字化运维（ET 端 PowerShell）')
-    [void]$sb.AppendLine('')
-    foreach ($p in (Get-ETObjectPropertyNames -InputObject $core)) { [void]$sb.AppendLine(("{0,-22} {1}" -f $p, $core.$p)) }
-    [void]$sb.AppendLine('')
-    [void]$sb.AppendLine('安全边界：不开放端口、不结束/重启业务软件、不自动覆盖运行中程序、')
-    [void]$sb.AppendLine('不自动执行系统修复、不只写自身 EquipmentId 的 Upload 目录。')
-    $ui.TxtAbout.Text = $sb.ToString()
 }
 
 # ================================================================ 14.5 页签 3 · 功能设置：开关与一键更新（E-04 / E-06）
@@ -2481,7 +2517,7 @@ if ($ui.BtnSavePreferences) {
 
 # ================================================================ 15. 页签导航与窗口交互
 # 页签路由契约（XAML 与脚本必须一致，改动这里要同批改 MainWindow.xaml）：
-#   0 生产软件 / 1 警告提示 / 2 信息区 / 3 功能设置 / 4 主数据
+#   0 信息区 / 1 生产软件 / 2 功能设置 / 3 主数据
 # 旧的「抽屉式」主数据 / 关于 已改为页签，Set-Drawer 与其四个按钮一并删除。
 if ($ui.BtnFullScreen) { $ui.BtnFullScreen.Add_Click({ Toggle-FullScreen }) }
 # 无边框 + 不在任务栏 ⇒ 必须有一个明确的关闭出口。关闭只关窗口，不动任何后台任务。

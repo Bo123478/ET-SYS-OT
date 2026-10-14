@@ -1,4 +1,4 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [int]$TimeoutSec = 120,
     [int]$PollMs = 1000

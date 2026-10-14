@@ -43,7 +43,9 @@ function Start-WorkbenchInInteractiveSession {
     $taskName = "ETWorkbench.Restart.{0}" -f ([guid]::NewGuid().ToString('N'))
     $startAt = (Get-Date).AddMinutes(2).ToString('HH:mm')
 
-    $launchArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', ('"{0}"' -f $ScriptPath))
+    $launchArgs = @('-NoProfile', '-ExecutionPolicy', 'Bypass')
+    if (-not $UseConsole) { $launchArgs += @('-WindowStyle', 'Hidden') }
+    $launchArgs += @('-File', ('"{0}"' -f $ScriptPath))
     if ($UseConsole) { $launchArgs += '-Console' }
     $taskCmd = 'powershell.exe {0}' -f ($launchArgs -join ' ')
 
@@ -109,9 +111,11 @@ if (Test-Path -LiteralPath $sentinelPath) {
 $newProc = $null
 $interactiveTaskName = $null
 if ([Environment]::UserInteractive) {
-    $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $entryScript)
+    $args = @('-NoProfile', '-ExecutionPolicy', 'Bypass')
+    if (-not $Console) { $args += @('-WindowStyle', 'Hidden') }
+    $args += @('-File', $entryScript)
     if ($Console) { $args += '-Console' }
-    $newProc = Start-Process powershell.exe -ArgumentList $args -PassThru
+    $newProc = Start-Process powershell.exe -ArgumentList $args -PassThru -WindowStyle $(if ($Console) { 'Normal' } else { 'Hidden' })
 }
 else {
     $interactiveTaskName = Start-WorkbenchInInteractiveSession -ScriptPath $entryScript -UseConsole:$Console
