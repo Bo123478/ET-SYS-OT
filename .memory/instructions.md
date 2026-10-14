@@ -14,3 +14,5 @@
 
 
 - [memory-boundary-engineering-first] .memory 只存工程长期事实。临时运行噪声不进 Decisions，放会话记忆或 Quirks 的 Agent Runtime 分组。
+
+- [restart-after-ui-script-change] 每次改完 ETWorkbench UI 或入口脚本后，默认执行 tools/Restart-ETWorkbench.ps1 -Console，并在终端确认“Restart completed/workflow completed”提示。

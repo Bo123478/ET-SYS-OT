@@ -448,6 +448,7 @@
         <Grid>
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="14"/>
             <ColumnDefinition Width="*"/>
           </Grid.ColumnDefinitions>
 
@@ -560,13 +561,17 @@
             </Grid>
           </Border>
 
+          <!-- 左右分区可视化分隔：明确「铭牌区」与「信息区」是两块独立区域 -->
+          <Border Grid.Column="1" Width="1" Margin="6,0,6,0"
+                  Background="#FFD9E1EA" VerticalAlignment="Stretch"/>
+
           <!-- ========== 右列：状态摘要 / 本机与边界 / 识别链 ========== -->
-          <Grid Grid.Column="1" Margin="14,0,0,0">
+          <Grid Grid.Column="2" Margin="0,0,0,0">
             <Grid.RowDefinitions>
               <RowDefinition Height="Auto"/>
               <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*" MinHeight="140"/>
-              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*" MinHeight="120"/>
+              <RowDefinition Height="*" MinHeight="120"/>
             </Grid.RowDefinitions>
 
             <!-- 铭牌同源摘要（状态灯取的同一份判定结果 + 同一张规则表） -->
@@ -636,11 +641,51 @@
               </Grid>
             </Border>
 
-            <TextBox Grid.Row="2" x:Name="TxtAbout" Style="{StaticResource Output}"
-                     Margin="0,14,0,0"/>
+            <!-- 运行说明区（把原纯文本输出提升为可感知区域） -->
+            <Border Grid.Row="2" Style="{StaticResource Region}" Margin="0,14,0,0">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-            <TextBox Grid.Row="3" x:Name="TxtIdentityOut" Style="{StaticResource Output}"
-                     Height="92" Margin="0,14,0,0"/>
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="运行说明"/>
+                  <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,0,0"
+                             Text="显示当前页面的静态说明与边界约束，便于现场快速对齐口径。"/>
+                </Grid>
+
+                <TextBox Grid.Row="1" x:Name="TxtAbout" Style="{StaticResource Output}"
+                         Margin="14,0,14,14"/>
+              </Grid>
+            </Border>
+
+            <!-- 识别过程区（把原日志输出区提升为独立区域） -->
+            <Border Grid.Row="3" Style="{StaticResource Region}" Margin="0,14,0,0">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Grid Grid.Row="0" Margin="14,12,14,10">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Grid.Column="0" Style="{StaticResource SectionTitle}" Text="识别过程"/>
+                  <TextBlock Grid.Column="1" Style="{StaticResource SectionNote}" Margin="12,0,0,0"
+                             Text="记录『物理机序列号 → 业务 IP → 设备/工程/应用』每一步结果与失败原因。"/>
+                </Grid>
+
+                <TextBox Grid.Row="1" x:Name="TxtIdentityOut" Style="{StaticResource Output}"
+                         Margin="14,0,14,14"/>
+              </Grid>
+            </Border>
           </Grid>
         </Grid>
       </TabItem>
