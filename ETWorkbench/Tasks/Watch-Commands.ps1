@@ -31,6 +31,7 @@
       PublishOutbox     —— 立即补传一次
       GetOutboxSummary  —— 返回本地 Outbox 待发统计
       SelfUpdate        —— 检查并执行工作台自更新（可带 Force）
+    RestartWorkbench  —— 重启 ET 工作台（用于开发完成后的可视化确认）
 
 .PARAMETER Console  同时输出到控制台。
 #>
@@ -61,6 +62,7 @@ $script:AllowedCommands = @(
     'PublishOutbox'
     'GetOutboxSummary'
     'SelfUpdate'
+    'RestartWorkbench'
 )
 
 function Test-Identifier {
@@ -165,6 +167,27 @@ function Invoke-ETCommand {
                 $r = Invoke-ETSelfUpdate -Force:$force
                 $result = [pscustomobject]@{ Ok = $r.Ok; Status = $r.Status; From = $r.From; To = $r.To; RolledBack = $r.RolledBack; Errors = $r.Errors }
                 $success = [bool]$r.Ok
+            }
+            'RestartWorkbench' {
+                $repoRoot = Split-Path -Parent $Root
+                $restartScript = Join-Path $repoRoot 'tools\Restart-ETWorkbench.ps1'
+                if (-not (Test-Path -LiteralPath $restartScript)) {
+                    throw "重启脚本不存在：$restartScript"
+                }
+
+                $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $restartScript
+                $code = $LASTEXITCODE
+                $msg = @($output) -join "`n"
+
+                $result = [pscustomobject]@{
+                    ExitCode = $code
+                    Message  = $msg
+                }
+
+                if ($code -ne 0) {
+                    throw ("重启失败（ExitCode={0}）：{1}" -f $code, $msg)
+                }
+                $success = $true
             }
         }
     }

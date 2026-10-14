@@ -75,9 +75,6 @@ function Start-WorkbenchInInteractiveSession {
         throw "Failed to run interactive task via schtasks."
     }
 
-    Start-Sleep -Seconds 2
-    & schtasks.exe /Delete /TN $taskName /F | Out-Null
-
     return $taskName
 }
 
@@ -137,8 +134,9 @@ if ($ok) {
 }
 
 if ($interactiveTaskName) {
-    Write-Host "[ET] Restart dispatched at $ts to interactive desktop session via task '$interactiveTaskName'." -ForegroundColor Green
-    exit 0
+    & schtasks.exe /Delete /TN $interactiveTaskName /F | Out-Null
+    Write-Host "[ET] Restart dispatched at $ts, but no active Workbench process was detected. Please run this script directly in the VM desktop PowerShell session." -ForegroundColor Yellow
+    exit 1
 }
 
 if ($newProc -and $newProc.HasExited -and $newProc.ExitCode -eq 0) {
