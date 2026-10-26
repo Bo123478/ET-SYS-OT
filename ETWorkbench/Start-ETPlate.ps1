@@ -613,16 +613,6 @@ public static class ETPlateActivate {
 
     function Invoke-OpenMainWindow {
         try {
-            $mutex = New-Object System.Threading.Mutex($false, 'Global\ETWorkbench.MainWindow.SingleInstance')
-            $lockHeld = $mutex.WaitOne(300, $false)
-            if (-not $lockHeld) {
-                [System.Windows.MessageBox]::Show($Script:Plate, 'ET 工作台已打开，不能重复打开。', 'ET 工作台', 'OK', 'Warning') | Out-Null
-                $mutex.Dispose()
-                return
-            }
-            $mutex.ReleaseMutex()
-            $mutex.Dispose()
-
             # 若主窗口进程仍在运行，尝试激活其主窗口；否则启动新进程
             if ($script:MainProc -and -not $script:MainProc.HasExited) {
                 try {
@@ -636,6 +626,11 @@ public static class ETPlateActivate {
             }
 
             $entry = Join-Path $Script:Root 'Start-ETWorkbench.ps1'
+            if (-not (Test-Path -LiteralPath $entry)) {
+                [System.Windows.MessageBox]::Show($Script:Plate, "找不到工作台入口脚本：$entry", 'ET 工作台', 'OK', 'Error') | Out-Null
+                return
+            }
+
             $psi = New-Object System.Diagnostics.ProcessStartInfo
             $psi.FileName = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
             $psi.Arguments = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' + $entry + '"'
@@ -645,8 +640,14 @@ public static class ETPlateActivate {
             $psi.CreateNoWindow = $true
             $psi.UseShellExecute = $false
             $script:MainProc = [System.Diagnostics.Process]::Start($psi)
+            if ($null -eq $script:MainProc) {
+                [System.Windows.MessageBox]::Show($Script:Plate, '启动工作台失败：未获得进程句柄。', 'ET 工作台', 'OK', 'Error') | Out-Null
+                return
+            }
         }
-        catch { }
+        catch {
+            [System.Windows.MessageBox]::Show($Script:Plate, ('启动工作台失败：' + $_.Exception.Message), 'ET 工作台', 'OK', 'Error') | Out-Null
+        }
     }
 
     function Invoke-ClosePlate {
