@@ -19,3 +19,5 @@
 - [current-baseline-commit] 基线（2026-10-08）：HEAD = 74afdd4「chore(memory): 记忆分层整理（工程事实 vs 代理运行噪声）」，origin/master 仍在 d4753aa，本地领先 1 个提交（未推送）。本次提交只动 `.memory/instructions.md` / `.memory/decisions.md` / `.memory/quirks.md`，无代码、无配置、无接口改动。目的：把工程长期事实与代理运行噪声分层，避免 Decisions 混入会话噪声。验证：Gate1 通过（ALL CHECKS PASSED），Gate2 通过（PASS 46 / FAIL 0 / WARN 1），Gate3 被现有工作台实例拦截（退出码 0，但非 13 项完整自检输出）。文档版本：进度 V3.2 / 待办 V2.0 / 契约 ET-IFC-001 v1.0.0 / 方案 V2.0。已知未修缺陷：D-3、D-6、D-09、T-29、T-31、D-12(半解)、T-39。
 
 - [dev-restart-helper-script] 新增 tools/Restart-ETWorkbench.ps1 作为开发态重启入口：先写 workbench.stop 优雅关停，再拉起 Start-ETWorkbench.ps1，并在终端输出完成提示。
+
+- [t39-key-control-hard-gate] T-39 已修：集成测试 §11 用 SoftCardPanel/TxtInfoState 替换旧探针，8 个关键控件缺任一即失败；内存撤销注册验证单个和多个缺失，finally 恢复。实测 8/8、PASS 46 FAIL 0 WARN 1；未改冻结接口。

@@ -28,3 +28,7 @@
 - [agent-never-recurse-userprofile] 别对 $env:USERPROFILE 做全量 Get-ChildItem -Recurse（含 -Force 更慢）。实测 120 秒必超时被踢到后台。查文件先限定目录：工作区、.vscode-server\data\User、$env:APPDATA。
 
 - [agent-push-credential-store-warning-is-harmless] 本机 git push 可能报 wincredman 凭据持久化失败。判定推送是否成功只看 origin/master..HEAD 是否为 0。
+
+- [selftest-single-instance-verdict] 入口 -SelfTest 即使在新进程运行，也可能被已有单实例锁拦截并退出 0；必须看到“结论：自检通过”才算通过。单独调用 Test-ETWorkbench 只能证明主体通过，不能替代入口验证；不要强解他人持有的锁。
+
+- [databricks-oauth-remote-browser-escaping] 远程 VS Code 启动 Databricks OAuth 时 BROWSER 的 cmd 链拆分 & 并把 redirect_uri 百分号编码损坏为 httpAFFlocalhostA8020。临时修正 browser.cmd 引号只消除 & 拆分，仍因百分号损坏超时；已删临时脚本并恢复环境，登录未完成。优先本机 OAuth 或完整链接手工登录并配置远程回调转发，勿存认证秘密。

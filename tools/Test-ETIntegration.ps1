@@ -238,10 +238,39 @@ Check 'XamlReader::Load(MainWindow.xaml)' {
     $xamlPath = Join-Path (Join-Path $Root 'UI') 'MainWindow.xaml'
     $reader = New-Object System.Xml.XmlNodeReader ([xml](Get-Content -LiteralPath $xamlPath -Raw -Encoding UTF8))
     $win = [System.Windows.Markup.XamlReader]::Load($reader)
-    $names = @($win.FindName('TxtIdentity'), $win.FindName('DgSoftware'), $win.FindName('CmbApplication'),
-        $win.FindName('CmbVersion'), $win.FindName('GridHealth'), $win.FindName('TxtMdOut'),
-        $win.FindName('TxtUpdateOut'), $win.FindName('TxtAbout')) | Where-Object { $null -ne $_ }
-    ("window '{0}' loaded; {1}/8 key controls resolved" -f $win.Title, $names.Count)
+    $keyNames = @('TxtIdentity', 'SoftCardPanel', 'CmbApplication', 'CmbVersion',
+        'GridHealth', 'TxtMdOut', 'TxtUpdateOut', 'TxtInfoState')
+    $assertControls = {
+        param($Window)
+        $missing = @($keyNames | Where-Object { $null -eq $Window.FindName($_) })
+        if ($missing.Count -gt 0) {
+            throw ("missing key control(s) in MainWindow.xaml: {0}" -f ($missing -join ', '))
+        }
+    }
+    & $assertControls $win
+
+    # T-39 regression: remove names only from this in-memory window, never the source XAML.
+    # Check both single and multiple missing controls; restore the name scope even on failure.
+    $removed = @{}
+    try {
+        foreach ($name in @('SoftCardPanel', 'TxtInfoState')) {
+            $removed[$name] = $win.FindName($name)
+            $win.UnregisterName($name)
+            $expected = 'missing key control(s) in MainWindow.xaml: ' +
+                (($keyNames | Where-Object { $removed.ContainsKey($_) }) -join ', ')
+            $caught = $null
+            try { & $assertControls $win } catch { $caught = $_.Exception.Message }
+            if ($caught -ne $expected) {
+                throw ("missing-control regression failed: expected '{0}', got '{1}'" -f $expected, $caught)
+            }
+        }
+    }
+    finally {
+        foreach ($name in $removed.Keys) { $win.RegisterName($name, $removed[$name]) }
+    }
+    & $assertControls $win
+    ("window '{0}' loaded; {1}/{1} key controls resolved" -f $win.Title, $keyNames.Count)
+    'missing-control regression passed (single and multiple missing names rejected)'
 } | Out-Null
 
 # ================================================================ 12. entry script contract
